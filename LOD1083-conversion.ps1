@@ -4,13 +4,14 @@
 # 1 ansible controller running Rocky 9.4
 # VSCode desktop environment on the jumphost with plugins for ansible, powershell, and remote-ssh
 
-# Provision https://labondemand.netapp.com/node/1083
-# "Easier Data Management with ONTAP Tools for VMware vSphere 10.2 v4.0"
-
-# On the Jumphost:
-# Copy this script to the downloads folder on the jumphost
-# Start a new administrator powershell session and run this script:
-# ~\Downloads\LOD1083-conversion.ps1
+# How To Use:
+# 1. Provision https://labondemand.netapp.com/node/1083
+#    "Easier Data Management with ONTAP Tools for VMware vSphere 10.2 v4.0"
+#
+# 2. Start a new administrator powershell window
+# 
+# 3. Run this command:
+#    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/madlabber/lod-utils/refs/heads/main/LOD1083-conversion.ps1'))
 
 
 # Install VSCode and some plugins:
