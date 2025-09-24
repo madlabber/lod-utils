@@ -68,12 +68,12 @@ copy-item C:\LOD\paint.net.5.0.13.winmsi.x64.msi C:\LOD\paint.net.5.0.13.winmsi.
 
 # Configure Certificate Authentication
 write-host "# Configure ssh key authentication"
-mkdir C:\Users\Administrator.DEMO\.ssh
+mkdir C:\Users\Administrator.DEMO\.ssh | write-host
 ssh-keygen -q -t ed25519 -f C:\Users\Administrator.DEMO\.ssh\id_ed25519 -N '""'
 
 # Add SSH key to RHEL1, who's DNS is missing from DC1 and will be fixed later in this script
 start-process -FilePath "C:\LOD\ssh-copy-id-net.exe" -ArgumentList "192.168.0.61", "22", "root", "Netapp1!", "C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub" -Wait
-ssh -o "StrictHostKeyChecking=accept-new" -i C:\Users\Administrator.Demo\.ssh\id_ed25519 root@192.168.0.61 cat /etc/redhat-release
+ssh -o "StrictHostKeyChecking=accept-new" root@192.168.0.61 cat /etc/redhat-release
 
 # Add SSH keys to cluster1, cluster2, cluster3
 write-host "# Add SSH keys to cluster1 and cluster 2"
