@@ -4,12 +4,12 @@
 # 1. Provision https://labondemand.netapp.com/node/1078
 #    "Early Adopter Lab for Unified ONTAP 9.16.1 v1.0"
 #
-# 2. Start a new administrator powershell window
+# 2. Start a new powershell window
 # 
 # 3. Run this command:
 #    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/madlabber/lod-utils/refs/heads/main/LOD1078-global-namespace.ps1'))
 
-# Define some vars:
+# Variables for things that may vary:
 # Cluster and SVM renames
 $cluster1="NY_Cluster"
 $cluster2="LA_Cluster"
@@ -31,6 +31,10 @@ $clustercred = New-Object System.Management.Automation.PSCredential $clusteruser
 $domaincred = New-Object System.Management.Automation.PSCredential $domainuser,$(ConvertTo-SecureString -String $domainpass -AsPlainText -Force)
 
 # Configure Jumphost:
+
+# Getting UAC prompts out of the way early
+#Start-Process Powershell -Verb RunAs -wait -ArgumentList ' -command "Install-WindowsFeature -Name Telnet-Client" '
+
 # Install Powershell modules:
 write-host "# Install Powershell modules:"
 if (-not (Get-Module -Name "NetApp.ONTAP" -ListAvailable)) {
@@ -67,9 +71,9 @@ write-host "# Configure ssh key authentication"
 mkdir C:\Users\Administrator.DEMO\.ssh
 ssh-keygen -q -t ed25519 -f C:\Users\Administrator.DEMO\.ssh\id_ed25519 -N '""'
 
-# RHEL1 is MIA
-#start-process -FilePath "C:\LOD\ssh-copy-id-net.exe" -ArgumentList "linux1", "22", "root", "Netapp1!", "C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub" -Wait
-#ssh -o "StrictHostKeyChecking=accept-new" -i C:\Users\Administrator.Demo\.ssh\id_ed25519 root@rhel1 cat /etc/rocky-release
+# Add SSH key to RHEL1, who's DNS is missing from DC1 and will be fixed later in this script
+start-process -FilePath "C:\LOD\ssh-copy-id-net.exe" -ArgumentList "192.168.0.61", "22", "root", "Netapp1!", "C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub" -Wait
+ssh -o "StrictHostKeyChecking=accept-new" -i C:\Users\Administrator.Demo\.ssh\id_ed25519 root@192.168.0.61 cat /etc/redhat-release
 
 # Add SSH keys to cluster1, cluster2, cluster3
 write-host "# Add SSH keys to cluster1 and cluster 2"
@@ -155,38 +159,41 @@ ssh admin@cluster3 vserver cifs share create -share-name Global -path /Global -v
 ssh admin@cluster3 vserver cifs share create -share-name $svm1dpvol -path /$svm1dpvol -vserver $svm3
 ssh admin@cluster3 vserver cifs share properties add -share-name $svm1dpvol -share-properties showsnapshot
 
+write-host 
+write-host "# Populating Filesystem:"
 write-host "# Create Directories"
-New-Item -Path "\\192.168.0.151\Global\$svm3vol\Conversation Nation" -ItemType Directory
-New-Item -Path "\\192.168.0.151\Global\$svm3vol\Tech ONTAP" -ItemType Directory
-New-Item -Path "\\192.168.0.151\Global\$svm3vol\The DC Dish" -ItemType Directory
-New-Item -Path "\\192.168.0.151\Global\$svm3vol\Tools" -ItemType Directory
-New-Item -Path "\\192.168.0.131\Global\$svm1vol\Nocturnal Nonsense" -ItemType Directory
-New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit" -ItemType Directory
-New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Morning Blend" -ItemType Directory
-New-Item -Path "\\192.168.0.131\Global\$svm1vol\Tools" -ItemType Directory
-
-write-host "# Copy Files"
-Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC1.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC2.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC3.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC4.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC5.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC6.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY1.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY2.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY3.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY4.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY5.jpg"
-Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY6.jpg"
+New-Item -Path "\\192.168.0.151\Global\$svm3vol\Conversation Nation" -ItemType Directory | write-host
+New-Item -Path "\\192.168.0.151\Global\$svm3vol\Tech ONTAP"          -ItemType Directory | write-host
+New-Item -Path "\\192.168.0.151\Global\$svm3vol\The DC Dish"         -ItemType Directory | write-host
+New-Item -Path "\\192.168.0.151\Global\$svm3vol\Tools"               -ItemType Directory | write-host
+New-Item -Path "\\192.168.0.131\Global\$svm1vol\Nocturnal Nonsense"  -ItemType Directory | write-host
+New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit"      -ItemType Directory | write-host
+New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Morning Blend"   -ItemType Directory | write-host
+New-Item -Path "\\192.168.0.131\Global\$svm1vol\Tools"               -ItemType Directory | write-host
 
 write-host "# Create Files"
-New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit\Daily Edit Script Draft 1.txt"
-New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit\Daily Edit Script Final.txt"
-New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit\Daily Edit Script Final Final.txt"
-New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit\Daily Edit Script Final Final Final.txt"
+New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit\Daily Edit Script Draft 1.txt"            | write-host
+New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit\Daily Edit Script Final.txt"              | write-host
+New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit\Daily Edit Script Final Final.txt"        | write-host
+New-Item -Path "\\192.168.0.131\Global\$svm1vol\The Daily Edit\Daily Edit Script Final Final Final.txt"  | write-host
 
+write-host "# Copy Files"
+Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC1.jpg"    -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC2.jpg"    -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC3.jpg"    -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC4.jpg"    -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC5.jpg"    -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-dc.jpg" -Destination "\\192.168.0.151\Global\$svm3vol\The DC Dish\DC6.jpg"    -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY1.jpg" -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY2.jpg" -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY3.jpg" -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY4.jpg" -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY5.jpg" -PassThru | Write-Host
+Copy-Item -Path "C:\LOD\wallpaper-ny.jpg" -Destination "\\192.168.0.131\Global\$svm1vol\The Daily Edit\NY6.jpg" -PassThru | Write-Host
+
+write-host 
 write-host "# Add drive leter on jumphost"
-New-PSDrive -Name G -PSProvider FileSystem -Root "\\192.168.0.151\Global" -Persist
+New-PSDrive -Name G -PSProvider FileSystem -Root "\\192.168.0.151\Global" -Scope Global -Persist
 
 # write-host "# Extract demo files"
 # Expand-Archive -Path ~\Downloads\files.zip -DestinationPath G:\
@@ -195,8 +202,8 @@ write-host "Configuring DC1..."
 
 write-host "# Add DNS records"
 invoke-command -ComputerName dc1 -Credential $domaincred -Command {
-    # Add DNS record for NY1
-    Add-DnsServerResourceRecordA -Name "NY1" -ZoneName "demo.netapp.com" -AllowUpdateAny -IPv4Address "192.168.0.40" 
+    # Add DNS record for RHEL1
+    Add-DnsServerResourceRecordA -Name "RHEL1" -ZoneName "demo.netapp.com" -AllowUpdateAny -IPv4Address "192.168.0.61" 
 }
 
 write-host "# Set Wallpaper"
@@ -252,7 +259,7 @@ invoke-command -ComputerName win1 -credential $domaincred -Command {
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0
 }
 
-write-host "# create startup script"
+write-host "# create logon script"
 invoke-command -ComputerName win1 -Credential $domaincred -Command {
     Param( $svm3dpvol )
     Add-Content -Path "C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\mapdrives.bat" -Value "net use G: \\192.168.0.131\Global"
