@@ -132,14 +132,14 @@ ssh admin@cluster3 volume flexcache create -vserver $svm3 -volume $svm1vol -size
 write-host "# Create Snapmirror cluster3->cluster1"
 ssh admin@cluster1 volume create -type dp -volume $svm3dpvol -state online -policy default -autosize-mode grow_shrink -snapdir-access true -aggr-list cluster1_01_SSD_1 -aggr-list-multiplier 4
 ssh admin@cluster1 snapmirror create -source-path $svm3':'$svm3vol -destination-path $svm1':'$svm3dpvol -vserver $svm1 -policy Asynchronous
-ssh admin@cluster1 snapmirror initialize -destination-path $svm1':'$svm3dpvol 
-ssh admin@cluster1 sleep 90
+ssh admin@cluster1 snapmirror initialize -destination-path $svm1':'$svm3dpvol -foreground
+# ssh admin@cluster1 sleep 90
 
 write-host "# Create Snapmirror cluster1->cluster3"
 ssh admin@cluster3 volume create -type dp -volume $svm1dpvol -state online -policy default -autosize-mode grow_shrink -snapdir-access true -aggr-list cluster3_01_SSD_1 -aggr-list-multiplier 8
 ssh admin@cluster3 snapmirror create -source-path $svm1':'$svm1vol -destination-path $svm3':'$svm1dpvol -vserver $svm3 -policy Asynchronous
-ssh admin@cluster3 snapmirror initialize -destination-path $svm3':'$svm1dpvol
-ssh admin@cluster3 sleep 90
+ssh admin@cluster3 snapmirror initialize -destination-path $svm3':'$svm1dpvol -foreground
+# ssh admin@cluster3 sleep 90
 
 write-host "# Mount backup volume on cluster1:"
 ssh admin@cluster1 volume mount $svm3dpvol -junction-path /$svm3dpvol 
@@ -225,17 +225,16 @@ invoke-command -ComputerName dc1 -credential $domaincred -Command {
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0
 }
 
-write-host "# create startup script"
+write-host "# create logon script"
 invoke-command -ComputerName dc1 -Credential $domaincred -Command {
     Param( $svm1dpvol )
-    Add-Content -Path "C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\mapdrives.bat" -Value "net use G: \\192.168.0.151\Global"
-    Add-Content -Path "C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\mapdrives.bat" -Value "net use Z: \\192.168.0.151\$svm1dpvol"
+    Add-Content -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\mapdrives.bat" -Value "net use G: \\192.168.0.151\Global"
+    Add-Content -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\mapdrives.bat" -Value "net use Z: \\192.168.0.151\$svm1dpvol"
 } -ArgumentList $svm1dpvol
 
-write-host "# create runonce script"
+write-host "# Add RunOnce entries"
 invoke-command -ComputerName dc1 -Credential $domaincred -Command {
-    Add-Content -Path 'C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\runonce.bat' -Value "msiexec /i C:\LOD\paint.net.5.0.13.winmsi.x64.msi"
-    Add-Content -Path 'C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\runonce.bat' -Value 'del "C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\runonce.bat"'
+    Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce" -Name "Paint.net" -Value 'msiexec.exe /i "C:\LOD\paint.net.5.0.13.winmsi.x64.msi"'    
 }
 
 write-host "Configuring Win1..."
@@ -262,12 +261,11 @@ invoke-command -ComputerName win1 -credential $domaincred -Command {
 write-host "# create logon script"
 invoke-command -ComputerName win1 -Credential $domaincred -Command {
     Param( $svm3dpvol )
-    Add-Content -Path "C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\mapdrives.bat" -Value "net use G: \\192.168.0.131\Global"
-    Add-Content -Path "C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\mapdrives.bat" -Value "net use Z: \\192.168.0.131\$svm3dpvol"
+    Add-Content -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\mapdrives.bat" -Value "net use G: \\192.168.0.131\Global"
+    Add-Content -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\mapdrives.bat" -Value "net use Z: \\192.168.0.131\$svm3dpvol"
 } -ArgumentList $svm3dpvol
 
-write-host "# create runonce script"
+write-host "# Add RunOnce entries"
 invoke-command -ComputerName win1 -Credential $domaincred -Command {
-    Add-Content -Path 'C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\runonce.bat' -Value "msiexec /i C:\LOD\paint.net.5.0.13.winmsi.x64.msi"
-    Add-Content -Path 'C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\runonce.bat' -Value 'del "C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\runonce.bat"'
+    Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce" -Name "Paint.net" -Value 'msiexec.exe /i "C:\LOD\paint.net.5.0.13.winmsi.x64.msi"'
 }
