@@ -48,16 +48,19 @@ Write-host "# install ssh-copy-id"
 Invoke-WebRequest -Uri "https://github.com/maxshlain/ssh-copy-id-net/releases/download/v0.1.7/ssh-copy-id-net-0.1.7-win-x64.zip" -Outfile C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip
 Expand-Archive -Path C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip -DestinationPath C:\LOD 
 
-Write-Host "# Download paint.net"
+write-host "# Download files"
 invoke-webrequest https://archive.org/download/paint.net-v5.0.13/paint.net.5.0.13.winmsi.x64.zip/paint.net.5.0.13.winmsi.x64.msi -outfile C:\LOD\paint.net.5.0.13.winmsi.x64.msi
 Unblock-File -Path C:\LOD\paint.net.5.0.13.winmsi.x64.msi
-# msiexec /i C:\LOD\paint.net.5.0.13.winmsi.x64.msi 
-
-write-host "# Download files"
 Invoke-WebRequest https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/United_States_Capitol_west_front_edit2.jpg/1200px-United_States_Capitol_west_front_edit2.jpg -OutFile C:\LOD\wallpaper-dc.jpg
 Unblock-File -Path C:\LOD\wallpaper-dc.jpg
 invoke-webrequest https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg/2560px-View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg -OutFile C:\LOD\wallpaper-ny.jpg
 Unblock-File -Path C:\LOD\wallpaper-ny.jpg
+
+write-host "# Copy files to other hosts"
+copy-item C:\LOD\wallpaper-dc.jpg C:\LOD\wallpaper.jpg -tosession (new-pssession dc1)
+copy-item C:\LOD\paint.net.5.0.13.winmsi.x64.msi C:\LOD\paint.net.5.0.13.winmsi.x64.msi -tosession (new-pssession dc1)
+copy-item C:\LOD\wallpaper-ny.jpg C:\LOD\wallpaper.jpg -tosession (new-pssession win1)
+copy-item C:\LOD\paint.net.5.0.13.winmsi.x64.msi C:\LOD\paint.net.5.0.13.winmsi.x64.msi -tosession (new-pssession win1)
 
 # Configure Certificate Authentication
 write-host "# Configure ssh key authentication"
@@ -186,12 +189,9 @@ write-host "# Add drive leter on jumphost"
 New-PSDrive -Name G -PSProvider FileSystem -Root "\\192.168.0.151\Global" -Persist
 
 # write-host "# Extract demo files"
-# Expand-Archive -Path ~\Downloads\files.ZIP -DestinationPath G:\
+# Expand-Archive -Path ~\Downloads\files.zip -DestinationPath G:\
 
-write-host "# Configure DC1..."
-
-# invoke-command -ComputerName dc1 -Credential $domaincred -command {New-PSDrive -Name G -PSProvider FileSystem -Root "\\192.168.0.151\Global" -Persist}
-# invoke-command -ComputerName dc1 -Credential $domaincred -command { cmd /c net use /PERSISTENT:YES G: \\192.168.0.151\Global }
+write-host "Configuring DC1..."
 
 write-host "# Add DNS records"
 invoke-command -ComputerName dc1 -Credential $domaincred -Command {
@@ -201,12 +201,6 @@ invoke-command -ComputerName dc1 -Credential $domaincred -Command {
 
 write-host "# Set Wallpaper"
 invoke-command -ComputerName dc1 -Credential $domaincred -Command {
-    # Download dc wallpaper
-    Invoke-WebRequest https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/United_States_Capitol_west_front_edit2.jpg/1200px-United_States_Capitol_west_front_edit2.jpg -OutFile C:\LOD\wallpaper.jpg
-
-    # Unblock that file:
-    Unblock-File -Path C:\LOD\wallpaper.jpg
-
     # Set the Wallpaper registry key to the image path
     Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop\' -Name 'WallPaper' -Value C:\LOD\wallpaper.jpg
 
@@ -222,13 +216,6 @@ invoke-command -ComputerName dc1 -credential $domaincred -Command {
     # Enable show hidden items
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Hidden" -Value 1
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0
-}
-
-write-host "# Download Paint.net 5.0.13"
-copy-item C:\LOD\paint.net.5.0.13.winmsi.x64.msi C:\LOD\paint.net.5.0.13.winmsi.x64.msi -tosession (new-pssession dc1)
-invoke-command -ComputerName dc1 -credential $domaincred -Command {
-    #invoke-webrequest https://archive.org/download/paint.net-v5.0.13/paint.net.5.0.13.winmsi.x64.zip/paint.net.5.0.13.winmsi.x64.msi -outfile C:\LOD\paint.net.5.0.13.winmsi.x64.msi
-    Unblock-File -Path C:\LOD\paint.net.5.0.13.winmsi.x64.msi
 }
 
 write-host "# create startup script"
@@ -244,16 +231,10 @@ invoke-command -ComputerName dc1 -Credential $domaincred -Command {
     Add-Content -Path 'C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\runonce.bat' -Value 'del "C:\Users\Administrator.DEMO\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\runonce.bat"'
 }
 
-write-host "Configuring Win1(NY1)..."
+write-host "Configuring Win1..."
 
-write-host "# apply NY wallpaper"
+write-host "# Set wallpaper"
 invoke-command -ComputerName win1 -credential $domaincred -Command {
-    # Download file
-    invoke-webrequest https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg/2560px-View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg -OutFile C:\LOD\wallpaper.jpg
-
-    # Unblock that file:
-    Unblock-File -Path C:\LOD\wallpaper.jpg
-
     # Set the Wallpaper registry key to the image path
     Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop\' -Name 'WallPaper' -Value C:\LOD\wallpaper.jpg
 
@@ -269,14 +250,6 @@ invoke-command -ComputerName win1 -credential $domaincred -Command {
     # Enable show hidden items
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Hidden" -Value 1
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0
-}
-
-write-host "# Download Paint.net 5.0.13"
-copy-item C:\LOD\paint.net.5.0.13.winmsi.x64.msi C:\LOD\paint.net.5.0.13.winmsi.x64.msi -tosession (new-pssession win1)
-invoke-command -ComputerName win1 -credential $domaincred -Command {
-    # Download installer
-    #invoke-webrequest https://archive.org/download/paint.net-v5.0.13/paint.net.5.0.13.winmsi.x64.zip/paint.net.5.0.13.winmsi.x64.msi -outfile C:\LOD\paint.net.5.0.13.winmsi.x64.msi
-    Unblock-File -Path C:\LOD\paint.net.5.0.13.winmsi.x64.msi
 }
 
 write-host "# create startup script"
