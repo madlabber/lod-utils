@@ -132,14 +132,14 @@ ssh admin@cluster3 volume flexcache create -vserver $svm3 -volume $svm1vol -size
 write-host "# Create Snapmirror cluster3->cluster1"
 ssh admin@cluster1 volume create -type dp -volume $svm3dpvol -state online -policy default -autosize-mode grow_shrink -snapdir-access true -aggr-list cluster1_01_SSD_1 -aggr-list-multiplier 4
 ssh admin@cluster1 snapmirror create -source-path $svm3':'$svm3vol -destination-path $svm1':'$svm3dpvol -vserver $svm1 -policy Asynchronous
-ssh admin@cluster1 snapmirror initialize -destination-path $svm1':'$svm3dpvol -foreground
-# ssh admin@cluster1 sleep 90
+ssh admin@cluster1 snapmirror initialize -destination-path $svm1':'$svm3dpvol
+ssh admin@cluster1 sleep 90
 
 write-host "# Create Snapmirror cluster1->cluster3"
 ssh admin@cluster3 volume create -type dp -volume $svm1dpvol -state online -policy default -autosize-mode grow_shrink -snapdir-access true -aggr-list cluster3_01_SSD_1 -aggr-list-multiplier 8
 ssh admin@cluster3 snapmirror create -source-path $svm1':'$svm1vol -destination-path $svm3':'$svm1dpvol -vserver $svm3 -policy Asynchronous
-ssh admin@cluster3 snapmirror initialize -destination-path $svm3':'$svm1dpvol -foreground
-# ssh admin@cluster3 sleep 90
+ssh admin@cluster3 snapmirror initialize -destination-path $svm3':'$svm1dpvol 
+ssh admin@cluster3 sleep 90
 
 write-host "# Mount backup volume on cluster1:"
 ssh admin@cluster1 volume mount $svm3dpvol -junction-path /$svm3dpvol 
