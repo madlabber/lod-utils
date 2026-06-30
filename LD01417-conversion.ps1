@@ -50,7 +50,7 @@ write-host "# Configure vSphere:"
 Connect-VIServer -Server vc1.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
 Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
 $result = add-vmhost esx2.demo.netapp.com -Server vc2.demo.netapp.com -Location Cluster1 -user root -password NetApp123! -force 
-$result = remove-vmhost esx1.demo.netapp.com -Server vc2.demo.netapp.com -Confirm:$false
+$result = remove-vmhost esx2.demo.netapp.com -Server vc1.demo.netapp.com -Confirm:$false
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name ISOs -Path /ISOs -NfsHost 192.168.0.132
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs01 -Path /vmnfs01 -NfsHost 192.168.0.132
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs02 -Path /vmnfs02 -NfsHost 192.168.0.142
