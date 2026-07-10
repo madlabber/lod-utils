@@ -49,12 +49,12 @@ Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "vserver nf
 $result = new-ncvol ISOs cluster1_01_SSD_1 100g /ISOs -vservercontext svm1 
 $result = new-ncvol code cluster1_01_SSD_1 100g /code -vservercontext svm1
 $result = new-ncvol vmnfs01 cluster1_01_SSD_1 3000g /vmnfs01 -vservercontext svm1
-$result = new-ncvol vmnfs03 cluster1_01_SSD_1 3000g /vmnfs01 -vservercontext svm1
+$result = new-ncvol vmnfs03 cluster1_01_SSD_1 3000g /vmnfs03 -vservercontext svm1
 write-host "- cluster1"
 Connect-NcController "cluster2" -Credential $credential
 Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
 $result = new-ncvol vmnfs02 cluster2_01_SSD_1 3000g /vmnfs02 -vservercontext svm2
-$result = new-ncvol vmnfs02 cluster2_01_SSD_1 3000g /vmnfs04 -vservercontext svm2
+$result = new-ncvol vmnfs04 cluster2_01_SSD_1 3000g /vmnfs04 -vservercontext svm2
 
 # Setup SSH keys for linux1
 write-host "# Setup SSH keys for linux1"
