@@ -20,15 +20,27 @@
 # & 'C:\Program Files\Microsoft VS Code\bin\code' --install-extension ms-vscode.powershell
 # & 'C:\Program Files\Microsoft VS Code\bin\code' --install-extension redhat.ansible
 
+# Make space for powershell status bar
+write-host "#"
+write-host "#"
+write-host "#"
+write-host "#"
+write-host "#"
+write-host "#"
+
 # Install Powershell modules:
 write-host "# Install Powershell modules:"
+write-host "# this will take several minutes..."
+write-host "- VCF.PowerCLI"
 Install-Module -Name VCF.PowerCLI -AllowClobber -Force
+write-host "- NetApp.ONTAP"
 Install-Module -Name NetApp.ONTAP
 Import-Module -Name VMware.PowerCLI 
 Import-Module -Name NetApp.ONTAP
 
 # Configure clusters 
 write-host "# Configure clusters "
+write-host "- cluster1"
 $username = 'admin'
 $password = ConvertTo-SecureString -String 'Netapp1!' -AsPlainText -Force
 $credential = New-Object System.Management.Automation.PSCredential $username,$password
@@ -38,6 +50,7 @@ $result = new-ncvol ISOs cluster1_01_SSD_1 100g /ISOs -vservercontext svm1
 $result = new-ncvol code cluster1_01_SSD_1 100g /code -vservercontext svm1
 $result = new-ncvol vmnfs01 cluster1_01_SSD_1 3000g /vmnfs01 -vservercontext svm1
 $result = new-ncvol vmnfs03 cluster1_01_SSD_1 3000g /vmnfs01 -vservercontext svm1
+write-host "- cluster1"
 Connect-NcController "cluster2" -Credential $credential
 Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
 $result = new-ncvol vmnfs02 cluster2_01_SSD_1 3000g /vmnfs02 -vservercontext svm2
