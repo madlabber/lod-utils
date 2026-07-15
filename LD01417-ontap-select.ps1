@@ -126,10 +126,14 @@ Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -pas
 # $result = add-vmhost esx2.demo.netapp.com -Server vc2.demo.netapp.com -Location Cluster1 -user root -password NetApp123! -force 
 # $result = remove-vmhost esx2.demo.netapp.com -Server vc1.demo.netapp.com -Confirm:$false
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name ISOs -Path /ISOs -NfsHost 192.168.0.132
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool1 -Path /pool1 -NfsHost 192.168.0.132
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool2 -Path /pool2 -NfsHost 192.168.0.142
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool3 -Path /pool3 -NfsHost 192.168.0.132
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool4 -Path /pool4 -NfsHost 192.168.0.142
+# $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool1 -Path /pool1 -NfsHost 192.168.0.132
+# $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool2 -Path /pool2 -NfsHost 192.168.0.142
+# $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool3 -Path /pool3 -NfsHost 192.168.0.132
+# $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool4 -Path /pool4 -NfsHost 192.168.0.142
+$result = Get-VMHost esx1.demo.netapp.com | New-Datastore -Nfs -Name pool1 -Path /pool1 -NfsHost 192.168.0.132
+$result = Get-VMHost esx2.demo.netapp.com | New-Datastore -Nfs -Name pool2 -Path /pool2 -NfsHost 192.168.0.142
+$result = Get-VMHost esx3.demo.netapp.com | New-Datastore -Nfs -Name pool3 -Path /pool3 -NfsHost 192.168.0.132
+$result = Get-VMHost esx4.demo.netapp.com | New-Datastore -Nfs -Name pool4 -Path /pool4 -NfsHost 192.168.0.142
 
 # Confirgure vSwitch0
 Get-VirtualSwitch -Name "vSwitch0" | Set-VirtualSwitch -Mtu 9000 -Confirm:$false
