@@ -12,6 +12,10 @@
 # Note while this prepares the environment for an OTS deployment, it does not
 # download the ONTAP Select deploy image.  You must download that within the lab from the MySupport site.
 
+# To Do:
+# - Add DNS records for deploy
+# - clone the ansible project on linux1
+
 # Install VSCode and some plugins:
 # write-host "# Install VSCode and some plugins:"
 # Invoke-WebRequest -Uri "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" -Outfile C:\LOD\VSCodeSetup-x64.exe
@@ -48,13 +52,13 @@ Connect-NcController "cluster1" -Credential $credential
 Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
 $result = new-ncvol ISOs cluster1_01_SSD_1 100g /ISOs -vservercontext svm1 
 $result = new-ncvol code cluster1_01_SSD_1 100g /code -vservercontext svm1
-$result = new-ncvol vmnfs01 cluster1_01_SSD_1 3000g /vmnfs01 -vservercontext svm1
-$result = new-ncvol vmnfs03 cluster1_01_SSD_1 3000g /vmnfs03 -vservercontext svm1
+$result = new-ncvol pool1 cluster1_01_SSD_1 3000g /pool1 -vservercontext svm1
+$result = new-ncvol pool3 cluster1_01_SSD_1 3000g /pool3 -vservercontext svm1
 write-host "- cluster1"
 Connect-NcController "cluster2" -Credential $credential
 Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
-$result = new-ncvol vmnfs02 cluster2_01_SSD_1 3000g /vmnfs02 -vservercontext svm2
-$result = new-ncvol vmnfs04 cluster2_01_SSD_1 3000g /vmnfs04 -vservercontext svm2
+$result = new-ncvol pool2 cluster2_01_SSD_1 3000g /pool2 -vservercontext svm2
+$result = new-ncvol pool4 cluster2_01_SSD_1 3000g /pool4 -vservercontext svm2
 
 # Setup SSH keys for linux1
 write-host "# Setup SSH keys for linux1"
@@ -76,13 +80,13 @@ ssh -o "StrictHostKeyChecking=accept-new" admin@cluster1 version
 ssh -o "StrictHostKeyChecking=accept-new" admin@cluster2 version
 
 # Configure Linux1 
-# write-host "# Configure Linux1 "
-# ssh root@linux1 dnf install -y epel-release
-# ssh root@linux1 dnf install -y nfs-utils git mtools qemu-img ansible python3-pip
-# ssh root@linux1 pip3 install --upgrade pip 
-# ssh root@linux1 pip3 install netapp-lib pyvmomi pywinrm pycdlib 
-# ssh root@linux1 mkdir /root/code
-# ssh root@linux1 mount -t nfs 192.168.0.132:/code /root/code
+write-host "# Configure Linux1 "
+ssh root@linux1 dnf install -y epel-release
+ssh root@linux1 dnf install -y nfs-utils git mtools qemu-img ansible python3-pip
+ssh root@linux1 pip3 install --upgrade pip 
+ssh root@linux1 pip3 install netapp-lib pyvmomi pywinrm pycdlib 
+ssh root@linux1 mkdir /root/code
+ssh root@linux1 mount -t nfs 192.168.0.132:/code /root/code
 
 # Configure Cluster1 for max capacity
 write-host "# Configure Cluster1 for max capacity"
@@ -110,10 +114,10 @@ ssh admin@cluster2 aggr relocation start -node cluster2-02 -destination cluster2
 
 # Set space reporting to logical
 write-host "# Configure logical space reporting"
-ssh admin@cluster1 volume modify vmnfs01 -is-space-reporting-logical true
-ssh admin@cluster1 volume modify vmnfs03 -is-space-reporting-logical true
-ssh admin@cluster2 volume modify vmnfs02 -is-space-reporting-logical true
-ssh admin@cluster2 volume modify vmnfs04 -is-space-reporting-logical true
+ssh admin@cluster1 volume modify pool1 -is-space-reporting-logical true
+ssh admin@cluster1 volume modify pool3 -is-space-reporting-logical true
+ssh admin@cluster2 volume modify pool2 -is-space-reporting-logical true
+ssh admin@cluster2 volume modify pool4 -is-space-reporting-logical true
 
 # Configure vSphere:
 write-host "# Configure vSphere:"
@@ -122,19 +126,19 @@ Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -pas
 # $result = add-vmhost esx2.demo.netapp.com -Server vc2.demo.netapp.com -Location Cluster1 -user root -password NetApp123! -force 
 # $result = remove-vmhost esx2.demo.netapp.com -Server vc1.demo.netapp.com -Confirm:$false
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name ISOs -Path /ISOs -NfsHost 192.168.0.132
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs01 -Path /vmnfs01 -NfsHost 192.168.0.132
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs02 -Path /vmnfs02 -NfsHost 192.168.0.142
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs03 -Path /vmnfs03 -NfsHost 192.168.0.132
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs04 -Path /vmnfs04 -NfsHost 192.168.0.142
+$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool1 -Path /pool1 -NfsHost 192.168.0.132
+$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool2 -Path /pool2 -NfsHost 192.168.0.142
+$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool3 -Path /pool3 -NfsHost 192.168.0.132
+$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool4 -Path /pool4 -NfsHost 192.168.0.142
 
-# Done with Powershell:
-#exit
+# Add Portgroup for HA
+Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch0" | New-VirtualPortGroup -Name "OTS-Internal" 
 
-# TBD: 
-# - install vaai 
-# - Git clone
-# - make this an invokable script
+# Stop the OTV VM
+Stop-VM -VM "OTV1" -Confirm:$false
 
+# Add some documentation to the desktop
+$IPAddresses = @"
 #IP Address Map:
 # 192.168.0.1	    Gateway
 # 192.168.0.5	    Jumphost
@@ -148,6 +152,7 @@ $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs04 -
 # 192.168.0.61	Linux1 (nested)
 # 192.168.0.62	OTV1
 # 192.168.0.64	Linux2 (nested)
+# 192.168.0.99  Deploy
 # 192.168.0.101	[cluster1] cluster_mgmt
 # 192.168.0.102	[cluster2] cluster_mgmt
 # 192.168.0.111	cluster1_01_mgmt1
@@ -170,4 +175,44 @@ $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs04 -
 # 192.168.0.144	[svm2] iscsi_2
 # 192.168.0.145	[svm2] nvme_1
 # 192.168.0.146	[svm2] nvme_2
-	
+
+"@
+
+$IPAddresses | Out-File -FilePath "C:\Users\Administrator.DEMO\Desktop\IPAddresses.txt"
+
+$Readme = @"
+This conversion prepares tthe lab environment for an ONTAP Select deployment, but does not perform the actual deployment.
+
+You must download the ONTAP Select Deploy tool from mysupport.netapp.com either from the product downloads area or the evaluation downloads area.
+
+Suggested deployment plan:
+1. Use the Deploy OVF feature on vc1.demo.netapp.com to install ONTAP Select Deploy on esx1 on datastore 'local1', with the following network parameters:
+    Hostname: deploy
+    ip_address: 192.168.0.99
+    Netmask: 255.255.255.0
+    Gateway: 192.168.0.1
+    DNS Server: 192.168.0.253
+
+2. On the ONTAP Deploy Administration tab, add both vcenter servers to the Management Servers list
+    vc1.demo.netapp.com
+	vc2.demo.netapp.com
+
+3. On the ONTAP Deploy Hypervisor Hosts tab, add the available ESX hosts.
+   management server: vc1.demo.netapp.com
+   hosts: esx1.demo.netapp.com
+	      esx2.demo.netapp.com
+   management server: vc2.demo.netapp.com
+   hosts: esx3.demo.netapp.com
+	      esx4.demo.netapp.com
+		  
+4. Deploy a single node OTS cluster to esx2.demo.netapp.com on storage pool "pool2"
+
+5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "pool3" and "pool4"
+Note that a 2 node HA deployment will need some networking remediation because this lab only has one network.
+This causes incorrect broadcast domain and port assignments during HA bringup that may need manual remediation.
+
+
+"@
+
+$Readme | Out-File -FilePath "C:\Users\Administrator.DEMO\Desktop\README.TXT"
+
