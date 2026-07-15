@@ -131,11 +131,15 @@ $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool2 -Pa
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool3 -Path /pool3 -NfsHost 192.168.0.132
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool4 -Path /pool4 -NfsHost 192.168.0.142
 
-# Add Portgroup for HA
+# Confirgure vSwitch0
+Get-VirtualSwitch -Name "vSwitch0" | Set-VirtualSwitch -Mtu 9000 -Confirm:$false
+Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch0" | New-VirtualPortGroup -Name "OTS-Mgmt" 
 Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch0" | New-VirtualPortGroup -Name "OTS-Internal" 
+Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch0" | New-VirtualPortGroup -Name "OTS-Data" 
 
-# Stop the OTV VM
+# Stop unused VMs
 Stop-VM -VM "OTV1" -Confirm:$false
+Stop-VM -VM "linux2" -Confirm:$false
 
 # Add some documentation to the desktop
 $IPAddresses = @"
@@ -210,6 +214,16 @@ Suggested deployment plan:
 5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "pool3" and "pool4"
 Note that a 2 node HA deployment will need some networking remediation because this lab only has one network.
 This causes incorrect broadcast domain and port assignments during HA bringup that may need manual remediation.
+
+example commands (for a cluster named 'demo2'):
+  broadcast-domain remove-ports -broadcast-domain Cluster -ipspace Cluster -ports demo2-01:e0b,demo2-01:e0g
+  broadcast-domain add-ports -broadcast-domain Default -ports demo2-01:e0b,demo2-01:e0g
+  broadcast-domain add-ports -broadcast-domain Default -ports demo2-02:e0b,demo2-02:e0g
+  network interface modify -vserver demo2 -lif demo2-02_mgmt1 -home-port e0b
+  network interface revert *
+  broadcast-domain add-ports -broadcast-domain Default -ports demo2-02:e0a
+  network interface modify -vserver demo2 -lif demo2-02_mgmt1 -home-port e0a
+  network interface revert *
 
 
 "@
