@@ -194,7 +194,7 @@ This conversion prepares tthe lab environment for an ONTAP Select deployment, bu
 You must download the ONTAP Select Deploy tool from mysupport.netapp.com either from the product downloads area or the evaluation downloads area.
 
 Suggested deployment plan:
-1. Use the Deploy OVF feature on vc1.demo.netapp.com to install ONTAP Select Deploy on esx1 on datastore 'local1', with the following network parameters:
+1. Use the Deploy OVF feature on vc1.demo.netapp.com to install ONTAP Select Deploy on esx2 on datastore 'local2', with the following network parameters:
     Hostname: deploy
     ip_address: 192.168.0.99
     Netmask: 255.255.255.0
