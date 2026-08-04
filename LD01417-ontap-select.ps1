@@ -114,10 +114,13 @@ Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "vserver nf
 $result = new-ncvol pool2 cluster2_01_SSD_1 3000g /pool2 -vservercontext svm2
 $result = new-ncvol pool4 cluster2_01_SSD_1 3000g /pool4 -vservercontext svm2
 
-# Setup SSH keys for linux1
-write-host "# Setup SSH keys for linux1"
+# Generate SSH keys
+write-host "# Generate SSH keys"
 mkdir C:\Users\Administrator.DEMO\.ssh
 ssh-keygen -q -t ed25519 -f C:\Users\Administrator.DEMO\.ssh\id_ed25519 -N '""'
+
+# Setup SSH keys for linux1
+write-host "# Add SSH keys to linux1"
 Invoke-WebRequest -Uri "https://github.com/maxshlain/ssh-copy-id-net/releases/download/v0.1.7/ssh-copy-id-net-0.1.7-win-x64.zip" -Outfile C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip
 Expand-Archive -Path C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip -DestinationPath C:\LOD 
 start-process -FilePath "C:\LOD\ssh-copy-id-net.exe" -ArgumentList "linux1", "22", "root", "Netapp1!", "C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub" -Wait
@@ -177,13 +180,7 @@ ssh admin@cluster2 volume modify pool4 -is-space-reporting-logical true
 write-host "# Configure vSphere:"
 Connect-VIServer -Server vc1.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
 Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
-# $result = add-vmhost esx2.demo.netapp.com -Server vc2.demo.netapp.com -Location Cluster1 -user root -password NetApp123! -force 
-# $result = remove-vmhost esx2.demo.netapp.com -Server vc1.demo.netapp.com -Confirm:$false
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name ISOs -Path /ISOs -NfsHost 192.168.0.132
-# $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool1 -Path /pool1 -NfsHost 192.168.0.132
-# $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool2 -Path /pool2 -NfsHost 192.168.0.142
-# $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool3 -Path /pool3 -NfsHost 192.168.0.132
-# $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool4 -Path /pool4 -NfsHost 192.168.0.142
 $result = Get-VMHost esx1.demo.netapp.com | New-Datastore -Nfs -Name pool1 -Path /pool1 -NfsHost 192.168.0.132
 $result = Get-VMHost esx2.demo.netapp.com | New-Datastore -Nfs -Name pool2 -Path /pool2 -NfsHost 192.168.0.142
 $result = Get-VMHost esx3.demo.netapp.com | New-Datastore -Nfs -Name pool3 -Path /pool3 -NfsHost 192.168.0.132
