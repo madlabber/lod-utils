@@ -89,11 +89,13 @@ write-host "- NetApp.ONTAP"
 Install-Module -Name NetApp.ONTAP
 
 # Import Modules
+write-host "Importing Modules"
 Import-Module -Name VMware.PowerCLI 
 Import-Module -Name NetApp.ONTAP
-Import-Module DnsServer
+Import-Module -Name DnsServer
 
 # Add DNS record for deploy at 192.168.0.99
+write-host "Adding deploy A record to DNS server"
 Add-DnsServerResourceRecordA –ComputerName dc1.demo.netapp.com -Name deploy -IPv4Address 192.168.0.99 -ZoneName demo.netapp.com
 
 # Configure clusters 
