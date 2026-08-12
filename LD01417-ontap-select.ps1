@@ -94,10 +94,6 @@ Import-Module -Name VMware.PowerCLI
 Import-Module -Name NetApp.ONTAP
 Import-Module -Name DnsServer
 
-# Add DNS record for deploy at 192.168.0.99
-write-host "Adding deploy A record to DNS server"
-Add-DnsServerResourceRecordA –ComputerName dc1.demo.netapp.com -Name deploy -IPv4Address 192.168.0.99 -ZoneName demo.netapp.com
-
 # Configure clusters 
 write-host "# Configure clusters "
 write-host "- cluster1"
@@ -240,4 +236,8 @@ $IPAddresses = @"
 "@
 
 $IPAddresses | Out-File -FilePath "C:\Users\Administrator.DEMO\Desktop\IPAddresses.txt"
+
+# Add DNS record for deploy at 192.168.0.99
+write-host "Adding deploy A record to DNS server"
+Add-DnsServerResourceRecordA –ComputerName "dc1.demo.netapp.com" -Name "deploy" -IPv4Address "192.168.0.99" -ZoneName "demo.netapp.com"
 
