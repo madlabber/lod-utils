@@ -15,55 +15,6 @@
 # To Do:
 # - clone the ansible project on linux1
 
-# Drop the readme on the desktop
-$Readme = @"
-This conversion script prepares the lab environment for an ONTAP Select deployment, but does not perform the actual deployment.
-
-You must download the ONTAP Select Deploy tool from mysupport.netapp.com either from the product downloads area or the evaluation downloads area.
-Then you must install ONTAP Select Deploy, and add the available management servers and hosts to Deploy's inventory. 
-Then you can use the 4 available hosts to build any combination of 1,2 or 4 node clusters.
-
-Suggested deployment plan:
-1. Use the Deploy OVF feature on vc1.demo.netapp.com to install ONTAP Select Deploy on esx2 on datastore 'local2', with the following network parameters:
-    Hostname: deploy
-    ip_address: 192.168.0.99
-    Netmask: 255.255.255.0
-    Gateway: 192.168.0.1
-    DNS Server: 192.168.0.253
-
-2. On the ONTAP Deploy Administration tab, add both vcenter servers to the Management Servers list
-    vc1.demo.netapp.com
-	vc2.demo.netapp.com
-
-3. On the ONTAP Deploy Hypervisor Hosts tab, add the available ESX hosts.
-   management server: vc1.demo.netapp.com
-   hosts: esx1.demo.netapp.com
-	      esx2.demo.netapp.com
-   management server: vc2.demo.netapp.com
-   hosts: esx3.demo.netapp.com
-	      esx4.demo.netapp.com
-		  
-4. Deploy a single node OTS cluster to esx2.demo.netapp.com on storage pool "pool2"
-
-5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "pool3" and "pool4"
-Note that a 2 node HA deployment will need some networking remediation because this lab only has one network.
-This causes incorrect broadcast domain and port assignments during HA bringup that may need manual remediation.
-
-example commands (for a 2-node cluster named 'demo2'):
-  broadcast-domain remove-ports -broadcast-domain Cluster -ipspace Cluster -ports demo2-01:e0b,demo2-01:e0g
-  broadcast-domain add-ports -broadcast-domain Default -ports demo2-01:e0b,demo2-01:e0g
-  broadcast-domain add-ports -broadcast-domain Default -ports demo2-02:e0b,demo2-02:e0g
-  network interface modify -vserver demo2 -lif demo2-02_mgmt1 -home-port e0b
-  network interface revert *
-  broadcast-domain add-ports -broadcast-domain Default -ports demo2-02:e0a
-  network interface modify -vserver demo2 -lif demo2-02_mgmt1 -home-port e0a
-  network interface revert *
-  
-
-"@
-
-$Readme | Out-File -FilePath "C:\Users\Administrator.DEMO\Desktop\README.TXT"
-
 # Install VSCode and some plugins:
 # write-host "# Install VSCode and some plugins:"
 # Invoke-WebRequest -Uri "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" -Outfile C:\LOD\VSCodeSetup-x64.exe
@@ -194,6 +145,10 @@ Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch0" |
 Stop-VM -VM "OTV1" -Confirm:$false
 Stop-VM -VM "linux2" -Confirm:$false
 
+# Add DNS record for deploy at 192.168.0.99
+write-host "Adding deploy A record to DNS server"
+Add-DnsServerResourceRecordA –ComputerName "dc1.demo.netapp.com" -Name "deploy" -IPv4Address 192.168.0.99 -ZoneName "demo.netapp.com"
+
 # Add some documentation to the desktop
 $IPAddresses = @"
 #IP Address Map:
@@ -237,7 +192,53 @@ $IPAddresses = @"
 
 $IPAddresses | Out-File -FilePath "C:\Users\Administrator.DEMO\Desktop\IPAddresses.txt"
 
-# Add DNS record for deploy at 192.168.0.99
-write-host "Adding deploy A record to DNS server"
-Add-DnsServerResourceRecordA –ComputerName "dc1.demo.netapp.com" -Name "deploy" -IPv4Address "192.168.0.99" -ZoneName "demo.netapp.com"
+# Drop the readme on the desktop
+$Readme = @"
+This conversion script prepares the lab environment for an ONTAP Select deployment, but does not perform the actual deployment.
+
+You must download the ONTAP Select Deploy tool from mysupport.netapp.com either from the product downloads area or the evaluation downloads area.
+Then you must install ONTAP Select Deploy, and add the available management servers and hosts to Deploys inventory. 
+Then you can use the 4 available hosts to build any combination of 1,2 or 4 node clusters.
+
+Suggested deployment plan:
+1. Use the Deploy OVF feature on vc1.demo.netapp.com to install ONTAP Select Deploy on esx2 on datastore 'local2', with the following network parameters:
+    Hostname: deploy
+    ip_address: 192.168.0.99
+    Netmask: 255.255.255.0
+    Gateway: 192.168.0.1
+    DNS Server: 192.168.0.253
+
+2. On the ONTAP Deploy Administration tab, add both vcenter servers to the Management Servers list
+    vc1.demo.netapp.com
+	vc2.demo.netapp.com
+
+3. On the ONTAP Deploy Hypervisor Hosts tab, add the available ESX hosts.
+   management server: vc1.demo.netapp.com
+   hosts: esx1.demo.netapp.com
+	      esx2.demo.netapp.com
+   management server: vc2.demo.netapp.com
+   hosts: esx3.demo.netapp.com
+	      esx4.demo.netapp.com
+		  
+4. Deploy a single node OTS cluster to esx2.demo.netapp.com on storage pool "pool2"
+
+5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "pool3" and "pool4"
+Note that a 2 node HA deployment will need some networking remediation because this lab only has one network.
+This causes incorrect broadcast domain and port assignments during HA bringup that may need manual remediation.
+
+example commands (for a 2-node cluster named 'demo2'):
+  broadcast-domain remove-ports -broadcast-domain Cluster -ipspace Cluster -ports demo2-01:e0b,demo2-01:e0g
+  broadcast-domain add-ports -broadcast-domain Default -ports demo2-01:e0b,demo2-01:e0g
+  broadcast-domain add-ports -broadcast-domain Default -ports demo2-02:e0b,demo2-02:e0g
+  network interface modify -vserver demo2 -lif demo2-02_mgmt1 -home-port e0b
+  network interface revert *
+  broadcast-domain add-ports -broadcast-domain Default -ports demo2-02:e0a
+  network interface modify -vserver demo2 -lif demo2-02_mgmt1 -home-port e0a
+  network interface revert *
+  
+
+"@
+
+$Readme | Out-File -FilePath "C:\Users\Administrator.DEMO\Desktop\README.TXT"
+
 
