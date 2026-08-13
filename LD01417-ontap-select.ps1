@@ -133,6 +133,23 @@ $initiator4=Get-VMHost esx4.demo.netapp.com | Get-VMHostHba -Type iSCSI | Select
 ssh admin@cluster1 igroup create -vserver svm1 -igroup vmw -protocol iscsi -ostype vmware -initiator $initiator1.iscsiname,$initiator2.iscsiname,$initiator3.iscsiname,$initiator4.iscsiname
 ssh admin@cluster2 igroup create -vserver svm2 -igroup vmw -protocol iscsi -ostype vmware -initiator $initiator1.iscsiname,$initiator2.iscsiname,$initiator3.iscsiname,$initiator4.iscsiname
 
+# Create LUN Volumes on Cluster1
+ssh admin@cluster1 vol create lun1 -vserver svm1 -size 400g -aggregate cluster1_01_SSD_1
+ssh admin@cluster1 vol create lun2 -vserver svm1 -size 400g -aggregate cluster1_01_SSD_1
+ssh admin@cluster1 vol create lun3 -vserver svm1 -size 400g -aggregate cluster1_01_SSD_1
+ssh admin@cluster1 vol create lun4 -vserver svm1 -size 400g -aggregate cluster1_01_SSD_1
+ssh admin@cluster1 vol create lun5 -vserver svm1 -size 400g -aggregate cluster1_01_SSD_1
+ssh admin@cluster1 vol create lun6 -vserver svm1 -size 400g -aggregate cluster1_01_SSD_1
+
+# Create LUN Volumes on CLuster2
+ssh admin@cluster2 vol create lun1 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create lun2 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create lun3 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create lun4 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create lun5 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create lun6 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+
+
 # Configure vSphere:
 write-host "# Configure vSphere:"
 Connect-VIServer -Server vc1.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
