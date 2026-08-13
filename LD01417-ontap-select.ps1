@@ -125,6 +125,14 @@ ssh admin@cluster1 volume modify pool3 -is-space-reporting-logical true
 ssh admin@cluster2 volume modify pool2 -is-space-reporting-logical true
 ssh admin@cluster2 volume modify pool4 -is-space-reporting-logical true
 
+# Configure initiator groups
+$initiator1=Get-VMHost esx1.demo.netapp.com | Get-VMHostHba -Type iSCSI | Select-Object iscsiname
+$initiator2=Get-VMHost esx2.demo.netapp.com | Get-VMHostHba -Type iSCSI | Select-Object iscsiname
+$initiator3=Get-VMHost esx3.demo.netapp.com | Get-VMHostHba -Type iSCSI | Select-Object iscsiname
+$initiator4=Get-VMHost esx4.demo.netapp.com | Get-VMHostHba -Type iSCSI | Select-Object iscsiname
+ssh admin@cluster1 igroup create -vserver svm1 -igroup vmw -protocol iscsi -ostype vmware -initiator $initiator1.iscsiname,$initiator2.iscsiname,$initiator3.iscsiname,$initiator4.iscsiname
+ssh admin@cluster2 igroup create -vserver svm2 -igroup vmw -protocol iscsi -ostype vmware -initiator $initiator1.iscsiname,$initiator2.iscsiname,$initiator3.iscsiname,$initiator4.iscsiname
+
 # Configure vSphere:
 write-host "# Configure vSphere:"
 Connect-VIServer -Server vc1.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
