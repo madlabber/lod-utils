@@ -158,22 +158,22 @@ ssh admin@cluster1 vol create esx2lun5 -vserver svm1 -size 400g -aggregate clust
 ssh admin@cluster1 vol create esx2lun6 -vserver svm1 -size 400g -aggregate cluster1_01_SSD_1
 
 # Create ESX3 LUN Volumes on Cluster2
-ssh admin@cluster2 vol create esx3lun0 -vserver svm2 -size 4000g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx3lun1 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx3lun2 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx3lun3 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx3lun4 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx3lun5 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx3lun6 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
+ssh admin@cluster2 vol create esx3lun0 -vserver svm2 -size 4000g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx3lun1 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx3lun2 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx3lun3 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx3lun4 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx3lun5 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx3lun6 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
 
 # Create ESX4 LUN Volumes on Cluster2
-ssh admin@cluster2 vol create esx4lun0 -vserver svm2 -size 4000g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx4lun1 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx4lun2 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx4lun3 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx4lun4 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx4lun5 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
-ssh admin@cluster2 vol create esx4lun6 -vserver svm2 -size 400g -aggregate cluster1_01_SSD_1
+ssh admin@cluster2 vol create esx4lun0 -vserver svm2 -size 4000g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx4lun1 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx4lun2 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx4lun3 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx4lun4 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx4lun5 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
+ssh admin@cluster2 vol create esx4lun6 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
 
 # Create ESX1 LUNs on Cluster1
 ssh admin@cluster1 lun create -path /vol/esx1lun0/lun0 -size 3000g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
