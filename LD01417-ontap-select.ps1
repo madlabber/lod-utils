@@ -360,6 +360,7 @@ Then you can use the 4 available hosts to build any combination of 1,2 or 4 node
 Suggested deployment plan:
 1. Use the Deploy OVF feature on vc1.demo.netapp.com to install ONTAP Select Deploy on esx2 on datastore 'local2', with the following network parameters:
     Hostname: deploy
+	Network: VM Network
     ip_address: 192.168.0.99
     Netmask: 255.255.255.0
     Gateway: 192.168.0.1
