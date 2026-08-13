@@ -279,7 +279,13 @@ $cli.storage.core.device.list.Invoke() | Where-Object {$_.Vendor -match "NETAPP"
 $cli.storage.core.claimrule.load.Invoke()
 $cli.storage.core.claimrule.run.Invoke()
 
-# Configure vSphere NFS Datastores:
+# Create VMFS Datastores
+$disk = Get-VMHost -Name "esx1.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx1.demo.netapp.com" -Name "OTS_Datastore1" -Path $disk.CanonicalName
+$disk = Get-VMHost -Name "esx2.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx2.demo.netapp.com" -Name "OTS_Datastore2" -Path $disk.CanonicalName
+$disk = Get-VMHost -Name "esx3.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx3.demo.netapp.com" -Name "OTS_Datastore3" -Path $disk.CanonicalName
+$disk = Get-VMHost -Name "esx4.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx4.demo.netapp.com" -Name "OTS_Datastore4" -Path $disk.CanonicalName
+
+# Create NFS Datastores:
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name ISOs -Path /ISOs -NfsHost 192.168.0.132
 $result = Get-VMHost esx1.demo.netapp.com | New-Datastore -Nfs -Name pool1 -Path /pool1 -NfsHost 192.168.0.132
 $result = Get-VMHost esx2.demo.netapp.com | New-Datastore -Nfs -Name pool2 -Path /pool2 -NfsHost 192.168.0.142
