@@ -125,6 +125,10 @@ ssh admin@cluster1 volume modify pool3 -is-space-reporting-logical true
 ssh admin@cluster2 volume modify pool2 -is-space-reporting-logical true
 ssh admin@cluster2 volume modify pool4 -is-space-reporting-logical true
 
+write-host "# Connect to vSphere:"
+Connect-VIServer -Server vc1.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
+Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
+
 # Configure initiator groups
 $initiator1=Get-VMHost esx1.demo.netapp.com | Get-VMHostHba -Type iSCSI | Select-Object iscsiname
 $initiator2=Get-VMHost esx2.demo.netapp.com | Get-VMHostHba -Type iSCSI | Select-Object iscsiname
@@ -220,9 +224,7 @@ ssh admin@cluster2 lun mapping create -path /vol/lun11/lun11 -igroup esx4 -vserv
 ssh admin@cluster2 lun mapping create -path /vol/lun12/lun12 -igroup esx4 -vserver svm2
 
 # Configure vSphere:
-write-host "# Configure vSphere:"
-Connect-VIServer -Server vc1.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
-Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
+
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name ISOs -Path /ISOs -NfsHost 192.168.0.132
 $result = Get-VMHost esx1.demo.netapp.com | New-Datastore -Nfs -Name pool1 -Path /pool1 -NfsHost 192.168.0.132
 $result = Get-VMHost esx2.demo.netapp.com | New-Datastore -Nfs -Name pool2 -Path /pool2 -NfsHost 192.168.0.142
