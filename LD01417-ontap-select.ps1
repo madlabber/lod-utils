@@ -149,6 +149,21 @@ ssh admin@cluster2 vol create lun4 -vserver svm2 -size 400g -aggregate cluster2_
 ssh admin@cluster2 vol create lun5 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
 ssh admin@cluster2 vol create lun6 -vserver svm2 -size 400g -aggregate cluster2_01_SSD_1
 
+# Create LUNs on Cluster1
+ssh admin@cluster1 lun create -path /vol/lun1/lun1 -size 200g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster1 lun create -path /vol/lun1/lun2 -size 200g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster1 lun create -path /vol/lun1/lun3 -size 200g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster1 lun create -path /vol/lun1/lun4 -size 200g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster1 lun create -path /vol/lun1/lun5 -size 200g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster1 lun create -path /vol/lun1/lun6 -size 200g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+
+# Create LUNs on Cluster2
+ssh admin@cluster2 lun create -path /vol/lun1/lun1 -size 200g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster2 lun create -path /vol/lun1/lun2 -size 200g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster2 lun create -path /vol/lun1/lun3 -size 200g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster2 lun create -path /vol/lun1/lun4 -size 200g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster2 lun create -path /vol/lun1/lun5 -size 200g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster2 lun create -path /vol/lun1/lun6 -size 200g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
 
 # Configure vSphere:
 write-host "# Configure vSphere:"
