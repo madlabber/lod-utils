@@ -268,7 +268,7 @@ ssh admin@cluster2 lun mapping create -path /vol/esx4lun6/lun6 -lun-id 6 -igroup
 # Create VMFS Datastores
 $disk = Get-VMHost -Name "esx1.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx1.demo.netapp.com" -Name "VMFS1" -Path $disk.CanonicalName
 $disk = Get-VMHost -Name "esx2.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx2.demo.netapp.com" -Name "VMFS2" -Path $disk.CanonicalName
-$disk = Get-VMHost -Name "esx3.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx3.demo.netapp.com" -Name "VMFW3" -Path $disk.CanonicalName
+$disk = Get-VMHost -Name "esx3.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx3.demo.netapp.com" -Name "VMFS3" -Path $disk.CanonicalName
 $disk = Get-VMHost -Name "esx4.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx4.demo.netapp.com" -Name "VMFS4" -Path $disk.CanonicalName
 
 # Create NFS Datastores:
