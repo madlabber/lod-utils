@@ -1,6 +1,6 @@
 # ONTAP Select Lab conversion script
 ## About
-This script converts an existing Lab On Demand environment into an ONTAP Select lab on demand environment.
+This script converts an existing Lab On Demand environment into an ONTAP Select lab on demand environment.  After conversion the lab can support 1,2, and 4 node ONTAP Select clusters, in HW Raid, SW Raid, and VNAS deployment scenarios.  
 
 ## How to use:
 1. Provision ["ONTAP Tools for VMware vSphere 10.5 v5.1"](https://labondemand.netapp.com/node/1454)
