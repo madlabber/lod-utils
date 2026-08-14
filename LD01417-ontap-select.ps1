@@ -247,37 +247,23 @@ ssh admin@cluster2 lun mapping create -path /vol/esx4lun4/lun4 -lun-id 4 -igroup
 ssh admin@cluster2 lun mapping create -path /vol/esx4lun5/lun5 -lun-id 5 -igroup esx4 -vserver svm2
 ssh admin@cluster2 lun mapping create -path /vol/esx4lun6/lun6 -lun-id 6 -igroup esx4 -vserver svm2
 
-# Mark all NetApp Luns as local SSD on ESX1
-Get-VMHost -Name "esx1.demo.netapp.com" | Get-VMHostStorage -RescanAllHba -RescanVmfs
-$cli = Get-EsxCli -VMHost "esx1.demo.netapp.com" -V2; 
-$cli.storage.nmp.satp.rule.add.Invoke(@{vendor="NETAPP"; model="LUN C-Mode"; option="enable_local enable_ssd"; satp="VMW_SATP_LOCAL"})
-$cli.storage.core.device.list.Invoke() | Where-Object {$_.Vendor -match "NETAPP" -and $_.Model -match "LUN C-Mode"} | ForEach-Object { Write-Host "Reclaiming paths for device: $($_.Device)"; $cli.storage.core.claiming.reclaim.Invoke(@{device=$_.Device}) }
-$cli.storage.core.claimrule.load.Invoke()
-$cli.storage.core.claimrule.run.Invoke()
+# Fix the iSCSI target configuration
+1..4 | ForEach-Object {
+    Get-VMHost -Name "esx$_.demo.netapp.com" | Get-VMHostHba -Type Iscsi | New-IScsiHbaTarget -Address 192.168.0.133 -Type Send -errorAction SilentlyContinue
+    Get-VMHost -Name "esx$_.demo.netapp.com" | Get-VMHostHba -Type Iscsi | New-IScsiHbaTarget -Address 192.168.0.134 -Type Send -errorAction SilentlyContinue
+    Get-VMHost -Name "esx$_.demo.netapp.com" | Get-VMHostHba -Type Iscsi | New-IScsiHbaTarget -Address 192.168.0.143 -Type Send -errorAction SilentlyContinue
+    Get-VMHost -Name "esx$_.demo.netapp.com" | Get-VMHostHba -Type Iscsi | New-IScsiHbaTarget -Address 192.168.0.144 -Type Send -errorAction SilentlyContinue
+}
 
-# Mark all NetApp Luns as local SSD on ESX2
-Get-VMHost -Name "esx2.demo.netapp.com" | Get-VMHostStorage -RescanAllHba -RescanVmfs
-$cli = Get-EsxCli -VMHost "esx2.demo.netapp.com" -V2; 
-$cli.storage.nmp.satp.rule.add.Invoke(@{vendor="NETAPP"; model="LUN C-Mode"; option="enable_local enable_ssd"; satp="VMW_SATP_LOCAL"})
-$cli.storage.core.device.list.Invoke() | Where-Object {$_.Vendor -match "NETAPP" -and $_.Model -match "LUN C-Mode"} | ForEach-Object { Write-Host "Reclaiming paths for device: $($_.Device)"; $cli.storage.core.claiming.reclaim.Invoke(@{device=$_.Device}) }
-$cli.storage.core.claimrule.load.Invoke()
-$cli.storage.core.claimrule.run.Invoke()
-
-# Mark all NetApp Luns as local SSD on ESX1
-Get-VMHost -Name "esx3.demo.netapp.com" | Get-VMHostStorage -RescanAllHba -RescanVmfs
-$cli = Get-EsxCli -VMHost "esx3.demo.netapp.com" -V2; 
-$cli.storage.nmp.satp.rule.add.Invoke(@{vendor="NETAPP"; model="LUN C-Mode"; option="enable_local enable_ssd"; satp="VMW_SATP_LOCAL"})
-$cli.storage.core.device.list.Invoke() | Where-Object {$_.Vendor -match "NETAPP" -and $_.Model -match "LUN C-Mode"} | ForEach-Object { Write-Host "Reclaiming paths for device: $($_.Device)"; $cli.storage.core.claiming.reclaim.Invoke(@{device=$_.Device}) }
-$cli.storage.core.claimrule.load.Invoke() 
-$cli.storage.core.claimrule.run.Invoke()
-
-# Mark all NetApp Luns as local SSD on ESX4
-Get-VMHost -Name "esx4.demo.netapp.com" | Get-VMHostStorage -RescanAllHba -RescanVmfs
-$cli = Get-EsxCli -VMHost "esx4.demo.netapp.com" -V2; 
-$cli.storage.nmp.satp.rule.add.Invoke(@{vendor="NETAPP"; model="LUN C-Mode"; option="enable_local enable_ssd"; satp="VMW_SATP_LOCAL"})
-$cli.storage.core.device.list.Invoke() | Where-Object {$_.Vendor -match "NETAPP" -and $_.Model -match "LUN C-Mode"} | ForEach-Object { Write-Host "Reclaiming paths for device: $($_.Device)"; $cli.storage.core.claiming.reclaim.Invoke(@{device=$_.Device}) }
-$cli.storage.core.claimrule.load.Invoke()
-$cli.storage.core.claimrule.run.Invoke()
+# Mark all NetApp Luns as local SSD
+1..4 | ForEach-Object {
+    Get-VMHost -Name "esx$_.demo.netapp.com" | Get-VMHostStorage -RescanAllHba -RescanVmfs
+    $cli = Get-EsxCli -VMHost "esx$_.demo.netapp.com" -V2; 
+    $cli.storage.nmp.satp.rule.add.Invoke(@{vendor="NETAPP"; model="LUN C-Mode"; option="enable_local enable_ssd"; satp="VMW_SATP_LOCAL"})
+    $cli.storage.core.device.list.Invoke() | Where-Object {$_.Vendor -match "NETAPP" -and $_.Model -match "LUN C-Mode"} | ForEach-Object { Write-Host "Reclaiming paths for device: $($_.Device)"; $cli.storage.core.claiming.reclaim.Invoke(@{device=$_.Device}) }
+    $cli.storage.core.claimrule.load.Invoke()
+    $cli.storage.core.claimrule.run.Invoke()
+}
 
 # Create VMFS Datastores
 $disk = Get-VMHost -Name "esx1.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx1.demo.netapp.com" -Name "VMFS1" -Path $disk.CanonicalName
