@@ -55,13 +55,13 @@ Connect-NcController "cluster1" -Credential $credential
 Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
 $result = new-ncvol ISOs cluster1_01_SSD_1 100g /ISOs -vservercontext svm1 
 $result = new-ncvol code cluster1_01_SSD_1 100g /code -vservercontext svm1
-$result = new-ncvol pool1 cluster1_01_SSD_1 3000g /pool1 -vservercontext svm1
-$result = new-ncvol pool3 cluster1_01_SSD_1 3000g /pool3 -vservercontext svm1
+$result = new-ncvol NFS1 cluster1_01_SSD_1 3000g /NFS1 -vservercontext svm1
+$result = new-ncvol NFS3 cluster1_01_SSD_1 3000g /NFS3 -vservercontext svm1
 write-host "- cluster1"
 Connect-NcController "cluster2" -Credential $credential
 Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
-$result = new-ncvol pool2 cluster2_01_SSD_1 3000g /pool2 -vservercontext svm2
-$result = new-ncvol pool4 cluster2_01_SSD_1 3000g /pool4 -vservercontext svm2
+$result = new-ncvol NFS2 cluster2_01_SSD_1 3000g /NFS2 -vservercontext svm2
+$result = new-ncvol NFS4 cluster2_01_SSD_1 3000g /NFS4 -vservercontext svm2
 
 # Generate SSH keys
 write-host "# Generate SSH keys"
@@ -120,10 +120,10 @@ ssh admin@cluster2 aggr relocation start -node cluster2-02 -destination cluster2
 
 # Set space reporting to logical
 write-host "# Configure logical space reporting"
-ssh admin@cluster1 volume modify pool1 -is-space-reporting-logical true
-ssh admin@cluster1 volume modify pool3 -is-space-reporting-logical true
-ssh admin@cluster2 volume modify pool2 -is-space-reporting-logical true
-ssh admin@cluster2 volume modify pool4 -is-space-reporting-logical true
+ssh admin@cluster1 volume modify NFS1 -is-space-reporting-logical true
+ssh admin@cluster1 volume modify NFS3 -is-space-reporting-logical true
+ssh admin@cluster2 volume modify NFS2 -is-space-reporting-logical true
+ssh admin@cluster2 volume modify NFS4 -is-space-reporting-logical true
 
 write-host "# Connect to vSphere:"
 Connect-VIServer -Server vc1.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
@@ -280,17 +280,17 @@ $cli.storage.core.claimrule.load.Invoke()
 $cli.storage.core.claimrule.run.Invoke()
 
 # Create VMFS Datastores
-$disk = Get-VMHost -Name "esx1.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx1.demo.netapp.com" -Name "OTS_Datastore1" -Path $disk.CanonicalName
-$disk = Get-VMHost -Name "esx2.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx2.demo.netapp.com" -Name "OTS_Datastore2" -Path $disk.CanonicalName
-$disk = Get-VMHost -Name "esx3.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx3.demo.netapp.com" -Name "OTS_Datastore3" -Path $disk.CanonicalName
-$disk = Get-VMHost -Name "esx4.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx4.demo.netapp.com" -Name "OTS_Datastore4" -Path $disk.CanonicalName
+$disk = Get-VMHost -Name "esx1.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx1.demo.netapp.com" -Name "VMFS1" -Path $disk.CanonicalName
+$disk = Get-VMHost -Name "esx2.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx2.demo.netapp.com" -Name "VMFS2" -Path $disk.CanonicalName
+$disk = Get-VMHost -Name "esx3.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx3.demo.netapp.com" -Name "VMFW3" -Path $disk.CanonicalName
+$disk = Get-VMHost -Name "esx4.demo.netapp.com" | Get-ScsiLun -LunType disk | Where-Object {$_.Vendor -match "NETAPP" -and $_.RuntimeName -like "*:L0"} | Select-Object -First 1; New-Datastore -VMHost "esx4.demo.netapp.com" -Name "VMFS4" -Path $disk.CanonicalName
 
 # Create NFS Datastores:
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name ISOs -Path /ISOs -NfsHost 192.168.0.132
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool1 -Path /pool1 -NfsHost 192.168.0.132
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool2 -Path /pool2 -NfsHost 192.168.0.142
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool3 -Path /pool3 -NfsHost 192.168.0.132
-$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name pool4 -Path /pool4 -NfsHost 192.168.0.142
+$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name NFS1 -Path /NFS1 -NfsHost 192.168.0.132
+$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name NFS2 -Path /NFS2 -NfsHost 192.168.0.142
+$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name NFS3 -Path /NFS3 -NfsHost 192.168.0.132
+$result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name NFS4 -Path /NFS4 -NfsHost 192.168.0.142
 
 # Confirgure vSwitch0
 Get-VirtualSwitch -Name "vSwitch0" | Set-VirtualSwitch -Mtu 9000 -Confirm:$false
@@ -378,9 +378,9 @@ Suggested deployment plan:
    hosts: esx3.demo.netapp.com
 	      esx4.demo.netapp.com
 		  
-4. Deploy a single node OTS cluster to esx2.demo.netapp.com on storage pool "pool2"
+4. Deploy a single node OTS cluster to esx1.demo.netapp.com on storage pool "VMFS1"
 
-5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "pool3" and "pool4"
+5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "VMFS3" and "VMFS4"
 Note that a 2 node HA deployment will need some networking remediation because this lab only has one network.
 This causes incorrect broadcast domain and port assignments during HA bringup that may need manual remediation.
 
