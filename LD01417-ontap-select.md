@@ -57,7 +57,7 @@ hosts: esx3.demo.netapp.com
 
 5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "VMFS3" and "VMFS4"
 
-###Notes 
+### Notes 
 Note that a 2 or 4 node HA deployment will need some networking remediation because this lab only has one network.
 This causes incorrect broadcast domain and port assignments during HA bringup that may need manual remediation.
 
