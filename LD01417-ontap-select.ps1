@@ -38,49 +38,55 @@ write-host "- VCF.PowerCLI"
 Install-Module -Name VCF.PowerCLI -AllowClobber -Force
 write-host "- NetApp.ONTAP"
 Install-Module -Name NetApp.ONTAP
+write-host "- posh-ssh"
+Install-Module -Name posh-ssh
 
 # Import Modules
 write-host "Importing Modules"
 Import-Module -Name VMware.PowerCLI 
 Import-Module -Name NetApp.ONTAP
 Import-Module -Name DnsServer
+Import-Module -Name posh-ssh
 
-# Configure clusters 
-write-host "# Configure clusters "
-write-host "- cluster1"
+# Connect to clusters 
+write-host "# Connecting to clusters "
 $username = 'admin'
 $password = ConvertTo-SecureString -String 'Netapp1!' -AsPlainText -Force
 $credential = New-Object System.Management.Automation.PSCredential $username,$password
 Connect-NcController "cluster1" -Credential $credential
-Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
-$result = new-ncvol ISOs cluster1_01_SSD_1 100g /ISOs -vservercontext svm1 
-$result = new-ncvol code cluster1_01_SSD_1 100g /code -vservercontext svm1
-$result = new-ncvol NFS1 cluster1_01_SSD_1 3000g /NFS1 -vservercontext svm1
-$result = new-ncvol NFS3 cluster1_01_SSD_1 3000g /NFS3 -vservercontext svm1
-write-host "- cluster1"
 Connect-NcController "cluster2" -Credential $credential
-Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
-$result = new-ncvol NFS2 cluster2_01_SSD_1 3000g /NFS2 -vservercontext svm2
-$result = new-ncvol NFS4 cluster2_01_SSD_1 3000g /NFS4 -vservercontext svm2
 
 # Generate SSH keys
 write-host "# Generate SSH keys"
 mkdir C:\Users\Administrator.DEMO\.ssh
 ssh-keygen -q -t ed25519 -f C:\Users\Administrator.DEMO\.ssh\id_ed25519 -N '""'
 
-# Setup SSH keys for linux1
-write-host "# Add SSH keys to linux1"
+# Generate SSH keys for linux1
+write-host "# Generating SSH keys"
 Invoke-WebRequest -Uri "https://github.com/maxshlain/ssh-copy-id-net/releases/download/v0.1.7/ssh-copy-id-net-0.1.7-win-x64.zip" -Outfile C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip
 Expand-Archive -Path C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip -DestinationPath C:\LOD 
+
+# Add keys to linux 1
+write-host "# Add SSH keys to linux1"
 start-process -FilePath "C:\LOD\ssh-copy-id-net.exe" -ArgumentList "linux1", "22", "root", "Netapp1!", "C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub" -Wait
 ssh -o "StrictHostKeyChecking=accept-new" -i C:\Users\Administrator.Demo\.ssh\id_ed25519 root@linux1 cat /etc/rocky-release
 
 # Add SSH keys to cluster1 and cluster 2
 write-host "# Add SSH keys to cluster1 and cluster 2"
-Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "security login create -user-or-group-name admin -application ssh -authentication-method publickey -role admin"
-Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "security login publickey create -username admin -application ssh -index 0 -publickey ""$(get-content C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub)"""
-Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "security login create -user-or-group-name admin -application ssh -authentication-method publickey -role admin"
-Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "security login publickey create -username admin -application ssh -index 0 -publickey ""$(get-content C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub)"""
+$session1 = New-SSHSession -ComputerName "cluster1" -Credential $credential -AcceptKey
+$session2 = New-SSHSession -ComputerName "cluster2" -Credential $credential -AcceptKey
+$cmd = 'security login create -user-or-group-name admin -application ssh -authentication-method publickey -role admin'
+$result = Invoke-SSHCommand -SessionId $session1.SessionID -Command $cmd
+$result = Invoke-SSHCommand -SessionId $session2.SessionID -Command $cmd
+$cmd = "security login publickey create -username admin -application ssh -index 0 -publickey ""$(get-content C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub)"""
+$result = Invoke-SSHCommand -SessionId $session1.SessionID -Command $cmd
+$result = Invoke-SSHCommand -SessionId $session2.SessionID -Command $cmd
+
+#The Invoke-NcSsh cmdlet is currently broken 8/24/2026
+#Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "security login create -user-or-group-name admin -application ssh -authentication-method publickey -role admin"
+#Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "security login publickey create -username admin -application ssh -index 0 -publickey ""$(get-content C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub)"""
+#Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "security login create -user-or-group-name admin -application ssh -authentication-method publickey -role admin"
+#Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "security login publickey create -username admin -application ssh -index 0 -publickey ""$(get-content C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub)"""
 sleep 30
 ssh -o "StrictHostKeyChecking=accept-new" admin@cluster1 version
 ssh -o "StrictHostKeyChecking=accept-new" admin@cluster2 version
@@ -93,6 +99,19 @@ ssh root@linux1 pip3 install --upgrade pip
 ssh root@linux1 pip3 install netapp-lib pyvmomi pywinrm pycdlib 
 ssh root@linux1 mkdir /root/code
 ssh root@linux1 mount -t nfs 192.168.0.132:/code /root/code
+
+# Configure vstorage 
+ssh admin@cluster1 vserver nfs modify -vstorage enabled
+ssh admin@cluster2 vserver nfs modify -vstorage enabled
+
+# Create Volumes
+write-host "creating NFS volumes"
+ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume ISOs -junction-path ISOs -size 100g
+ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume code -junction-path code -size 100g
+ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume NFS1 -junction-path NFS1 -size 3000g
+ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume NFS3 -junction-path NFS3 -size 3000g
+ssh admin@cluster2 volume create -vserver svm2 -aggregate cluster2_01_SSD_1 -volume NFS2 -junction-path NFS2 -size 3000g
+ssh admin@cluster2 volume create -vserver svm2 -aggregate cluster2_01_SSD_1 -volume NFS4 -junction-path NFS4 -size 3000g
 
 # Configure Cluster1 for max capacity
 write-host "# Configure Cluster1 for max capacity"
