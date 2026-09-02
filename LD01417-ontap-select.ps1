@@ -91,27 +91,18 @@ sleep 30
 ssh -o "StrictHostKeyChecking=accept-new" admin@cluster1 version
 ssh -o "StrictHostKeyChecking=accept-new" admin@cluster2 version
 
-# Configure Linux1 
-write-host "# Configure Linux1 "
-ssh root@linux1 dnf install -y epel-release
-ssh root@linux1 dnf install -y nfs-utils git mtools qemu-img ansible python3-pip
-ssh root@linux1 pip3 install --upgrade pip 
-ssh root@linux1 pip3 install netapp-lib pyvmomi pywinrm pycdlib 
-ssh root@linux1 mkdir /root/code
-ssh root@linux1 mount -t nfs 192.168.0.132:/code /root/code
-
 # Configure vstorage 
 ssh admin@cluster1 vserver nfs modify -vstorage enabled
 ssh admin@cluster2 vserver nfs modify -vstorage enabled
 
 # Create Volumes
 write-host "creating NFS volumes"
-ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume ISOs -junction-path ISOs -size 100g
-ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume code -junction-path code -size 100g
-ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume NFS1 -junction-path NFS1 -size 3000g
-ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume NFS3 -junction-path NFS3 -size 3000g
-ssh admin@cluster2 volume create -vserver svm2 -aggregate cluster2_01_SSD_1 -volume NFS2 -junction-path NFS2 -size 3000g
-ssh admin@cluster2 volume create -vserver svm2 -aggregate cluster2_01_SSD_1 -volume NFS4 -junction-path NFS4 -size 3000g
+ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume ISOs -junction-path /ISOs -size 100g
+ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume code -junction-path /code -size 100g
+ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume NFS1 -junction-path /NFS1 -size 3000g
+ssh admin@cluster1 volume create -vserver svm1 -aggregate cluster1_01_SSD_1 -volume NFS3 -junction-path /NFS3 -size 3000g
+ssh admin@cluster2 volume create -vserver svm2 -aggregate cluster2_01_SSD_1 -volume NFS2 -junction-path /NFS2 -size 3000g
+ssh admin@cluster2 volume create -vserver svm2 -aggregate cluster2_01_SSD_1 -volume NFS4 -junction-path /NFS4 -size 3000g
 
 # Configure Cluster1 for max capacity
 write-host "# Configure Cluster1 for max capacity"
@@ -144,6 +135,15 @@ ssh admin@cluster1 volume modify NFS3 -is-space-reporting-logical true
 ssh admin@cluster2 volume modify NFS2 -is-space-reporting-logical true
 ssh admin@cluster2 volume modify NFS4 -is-space-reporting-logical true
 
+# Configure Linux1 
+write-host "# Configure Linux1 "
+ssh root@linux1 dnf install -y epel-release
+ssh root@linux1 dnf install -y nfs-utils git mtools qemu-img ansible python3-pip
+ssh root@linux1 pip3 install --upgrade pip 
+ssh root@linux1 pip3 install netapp-lib pyvmomi pywinrm pycdlib 
+ssh root@linux1 mkdir /root/code
+ssh root@linux1 mount -t nfs 192.168.0.132:/code /root/code
+
 write-host "# Connect to vSphere:"
 Connect-VIServer -Server vc1.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
 Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
@@ -158,113 +158,141 @@ ssh admin@cluster1 igroup create -vserver svm1 -igroup esx2 -protocol iscsi -ost
 ssh admin@cluster2 igroup create -vserver svm2 -igroup esx3 -protocol iscsi -ostype vmware -initiator $initiator3.iscsiname
 ssh admin@cluster2 igroup create -vserver svm2 -igroup esx4 -protocol iscsi -ostype vmware -initiator $initiator4.iscsiname
 
-# Create ESX1 LUN Volumes on Cluster1
+# Create LUN0s for OTS system disks
 ssh admin@cluster1 vol create esx1lun0 -vserver svm1 -size 4000g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx1lun1 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx1lun2 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx1lun3 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx1lun4 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx1lun5 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx1lun6 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-
-# Create ESX2 LUN Volumes on Cluster1
 ssh admin@cluster1 vol create esx2lun0 -vserver svm1 -size 4000g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx2lun1 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx2lun2 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx2lun3 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx2lun4 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx2lun5 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-ssh admin@cluster1 vol create esx2lun6 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
-
-# Create ESX3 LUN Volumes on Cluster2
 ssh admin@cluster2 vol create esx3lun0 -vserver svm2 -size 4000g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx3lun1 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx3lun2 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx3lun3 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx3lun4 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx3lun5 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx3lun6 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-
-# Create ESX4 LUN Volumes on Cluster2
 ssh admin@cluster2 vol create esx4lun0 -vserver svm2 -size 4000g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx4lun1 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx4lun2 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx4lun3 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx4lun4 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx4lun5 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
-ssh admin@cluster2 vol create esx4lun6 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+ssh admin@cluster1 lun create -path /vol/esx1lun0/lun0 -size 3000g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster1 lun create -path /vol/esx2lun0/lun0 -size 3000g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster2 lun create -path /vol/esx3lun0/lun0 -size 3000g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+ssh admin@cluster2 lun create -path /vol/esx4lun0/lun0 -size 3000g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+
+# Create LUN Volumes
+1..6 | ForEach-Object {
+    ssh admin@cluster1 vol create esx1lun$_ -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+	ssh admin@cluster1 vol create esx2lun$_ -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+	ssh admin@cluster2 vol create esx3lun$_ -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+	ssh admin@cluster2 vol create esx4lun$_ -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+}
+
+# Create LUNs
+1..6 | ForEach-Object {
+    ssh admin@cluster1 lun create -path /vol/esx1lun$_/lun$_ -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+	ssh admin@cluster1 lun create -path /vol/esx2lun$_/lun$_ -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+	ssh admin@cluster2 lun create -path /vol/esx3lun$_/lun$_ -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+	ssh admin@cluster2 lun create -path /vol/esx4lun$_/lun$_ -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+}
+
+# Create LUN Mappings
+0..6 | ForEach-Object {
+    ssh admin@cluster1 lun mapping create -path /vol/esx1lun$_/lun$_ -lun-id $_ -igroup esx1 -vserver svm1
+	ssh admin@cluster1 lun mapping create -path /vol/esx2lun$_/lun$_ -lun-id $_ -igroup esx2 -vserver svm1
+	ssh admin@cluster2 lun mapping create -path /vol/esx3lun$_/lun$_ -lun-id $_ -igroup esx3 -vserver svm2
+	ssh admin@cluster2 lun mapping create -path /vol/esx4lun$_/lun$_ -lun-id $_ -igroup esx4 -vserver svm2
+}
+# # Create ESX1 LUN Volumes on Cluster1
+# ssh admin@cluster1 vol create esx1lun1 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx1lun2 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx1lun3 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx1lun4 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx1lun5 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx1lun6 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+
+# # Create ESX2 LUN Volumes on Cluster1
+# ssh admin@cluster1 vol create esx2lun1 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx2lun2 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx2lun3 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx2lun4 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx2lun5 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+# ssh admin@cluster1 vol create esx2lun6 -vserver svm1 -size 2048g -aggregate cluster1_01_SSD_1
+
+# # Create ESX3 LUN Volumes on Cluster2
+# ssh admin@cluster2 vol create esx3lun1 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx3lun2 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx3lun3 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx3lun4 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx3lun5 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx3lun6 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+
+# # Create ESX4 LUN Volumes on Cluster2
+# ssh admin@cluster2 vol create esx4lun1 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx4lun2 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx4lun3 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx4lun4 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx4lun5 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
+# ssh admin@cluster2 vol create esx4lun6 -vserver svm2 -size 2048g -aggregate cluster2_01_SSD_1
 
 # Create ESX1 LUNs on Cluster1
-ssh admin@cluster1 lun create -path /vol/esx1lun0/lun0 -size 3000g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx1lun1/lun1 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx1lun2/lun2 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx1lun3/lun3 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx1lun4/lun4 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx1lun5/lun5 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx1lun6/lun6 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx1lun1/lun1 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx1lun2/lun2 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx1lun3/lun3 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx1lun4/lun4 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx1lun5/lun5 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx1lun6/lun6 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
 
-# Create ESX2 LUNs on Cluster1
-ssh admin@cluster1 lun create -path /vol/esx2lun0/lun0 -size 3000g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx2lun1/lun1 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx2lun2/lun2 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx2lun3/lun3 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx2lun4/lun4 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx2lun5/lun5 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster1 lun create -path /vol/esx2lun6/lun6 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# # Create ESX2 LUNs on Cluster1
 
-# Create ESX3 LUNs on Cluster2
-ssh admin@cluster2 lun create -path /vol/esx3lun0/lun0 -size 3000g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx3lun1/lun1 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx3lun2/lun2 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx3lun3/lun3 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx3lun4/lun4 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx3lun5/lun5 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx3lun6/lun6 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx2lun1/lun1 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx2lun2/lun2 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx2lun3/lun3 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx2lun4/lun4 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx2lun5/lun5 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster1 lun create -path /vol/esx2lun6/lun6 -size 1024g -vserver svm1 -ostype vmware -space-reserve disabled -space-allocation disabled
 
-# Create ESX4 LUNs on Cluster2
-ssh admin@cluster2 lun create -path /vol/esx4lun0/lun0 -size 3000g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx4lun1/lun1 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx4lun2/lun2 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx4lun3/lun3 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx4lun4/lun4 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx4lun5/lun5 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
-ssh admin@cluster2 lun create -path /vol/esx4lun6/lun6 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# # Create ESX3 LUNs on Cluster2
+
+# ssh admin@cluster2 lun create -path /vol/esx3lun1/lun1 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx3lun2/lun2 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx3lun3/lun3 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx3lun4/lun4 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx3lun5/lun5 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx3lun6/lun6 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+
+# # Create ESX4 LUNs on Cluster2
+
+# ssh admin@cluster2 lun create -path /vol/esx4lun1/lun1 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx4lun2/lun2 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx4lun3/lun3 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx4lun4/lun4 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx4lun5/lun5 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
+# ssh admin@cluster2 lun create -path /vol/esx4lun6/lun6 -size 1024g -vserver svm2 -ostype vmware -space-reserve disabled -space-allocation disabled
 
 # Map ESX1 luns to igroups on Cluster1
-ssh admin@cluster1 lun mapping create -path /vol/esx1lun0/lun0 -lun-id 0 -igroup esx1 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx1lun1/lun1 -lun-id 1 -igroup esx1 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx1lun2/lun2 -lun-id 2 -igroup esx1 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx1lun3/lun3 -lun-id 3 -igroup esx1 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx1lun4/lun4 -lun-id 4 -igroup esx1 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx1lun5/lun5 -lun-id 5 -igroup esx1 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx1lun6/lun6 -lun-id 6 -igroup esx1 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx1lun0/lun0 -lun-id 0 -igroup esx1 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx1lun1/lun1 -lun-id 1 -igroup esx1 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx1lun2/lun2 -lun-id 2 -igroup esx1 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx1lun3/lun3 -lun-id 3 -igroup esx1 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx1lun4/lun4 -lun-id 4 -igroup esx1 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx1lun5/lun5 -lun-id 5 -igroup esx1 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx1lun6/lun6 -lun-id 6 -igroup esx1 -vserver svm1
 
-# Map ESX2 luns to igroups on Cluster1
-ssh admin@cluster1 lun mapping create -path /vol/esx2lun0/lun0 -lun-id 0 -igroup esx2 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx2lun1/lun1 -lun-id 1 -igroup esx2 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx2lun2/lun2 -lun-id 2 -igroup esx2 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx2lun3/lun3 -lun-id 3 -igroup esx2 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx2lun4/lun4 -lun-id 4 -igroup esx2 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx2lun5/lun5 -lun-id 5 -igroup esx2 -vserver svm1
-ssh admin@cluster1 lun mapping create -path /vol/esx2lun6/lun6 -lun-id 6 -igroup esx2 -vserver svm1
+# # Map ESX2 luns to igroups on Cluster1
+# ssh admin@cluster1 lun mapping create -path /vol/esx2lun0/lun0 -lun-id 0 -igroup esx2 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx2lun1/lun1 -lun-id 1 -igroup esx2 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx2lun2/lun2 -lun-id 2 -igroup esx2 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx2lun3/lun3 -lun-id 3 -igroup esx2 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx2lun4/lun4 -lun-id 4 -igroup esx2 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx2lun5/lun5 -lun-id 5 -igroup esx2 -vserver svm1
+# ssh admin@cluster1 lun mapping create -path /vol/esx2lun6/lun6 -lun-id 6 -igroup esx2 -vserver svm1
 
-# Map ESX3 luns to igroups on Cluster2
-ssh admin@cluster2 lun mapping create -path /vol/esx3lun0/lun0 -lun-id 0 -igroup esx3 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx3lun1/lun1 -lun-id 1 -igroup esx3 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx3lun2/lun2 -lun-id 2 -igroup esx3 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx3lun3/lun3 -lun-id 3 -igroup esx3 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx3lun4/lun4 -lun-id 4 -igroup esx3 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx3lun5/lun5 -lun-id 5 -igroup esx3 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx3lun6/lun6 -lun-id 6 -igroup esx3 -vserver svm2
+# # Map ESX3 luns to igroups on Cluster2
+# ssh admin@cluster2 lun mapping create -path /vol/esx3lun0/lun0 -lun-id 0 -igroup esx3 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx3lun1/lun1 -lun-id 1 -igroup esx3 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx3lun2/lun2 -lun-id 2 -igroup esx3 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx3lun3/lun3 -lun-id 3 -igroup esx3 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx3lun4/lun4 -lun-id 4 -igroup esx3 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx3lun5/lun5 -lun-id 5 -igroup esx3 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx3lun6/lun6 -lun-id 6 -igroup esx3 -vserver svm2
 
-# Map ESX4 luns to igroups on Cluster2
-ssh admin@cluster2 lun mapping create -path /vol/esx4lun0/lun0 -lun-id 0 -igroup esx4 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx4lun1/lun1 -lun-id 1 -igroup esx4 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx4lun2/lun2 -lun-id 2 -igroup esx4 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx4lun3/lun3 -lun-id 3 -igroup esx4 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx4lun4/lun4 -lun-id 4 -igroup esx4 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx4lun5/lun5 -lun-id 5 -igroup esx4 -vserver svm2
-ssh admin@cluster2 lun mapping create -path /vol/esx4lun6/lun6 -lun-id 6 -igroup esx4 -vserver svm2
+# # Map ESX4 luns to igroups on Cluster2
+# ssh admin@cluster2 lun mapping create -path /vol/esx4lun0/lun0 -lun-id 0 -igroup esx4 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx4lun1/lun1 -lun-id 1 -igroup esx4 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx4lun2/lun2 -lun-id 2 -igroup esx4 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx4lun3/lun3 -lun-id 3 -igroup esx4 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx4lun4/lun4 -lun-id 4 -igroup esx4 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx4lun5/lun5 -lun-id 5 -igroup esx4 -vserver svm2
+# ssh admin@cluster2 lun mapping create -path /vol/esx4lun6/lun6 -lun-id 6 -igroup esx4 -vserver svm2
 
 # Fix the iSCSI target configuration
 1..4 | ForEach-Object {
