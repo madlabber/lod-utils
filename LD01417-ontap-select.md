@@ -14,14 +14,12 @@ This script converts an existing Lab On Demand environment into an ONTAP Select 
    ```
 
 ## Readme
-note: this file will also be placed on the desktop by the script.
-
 This conversion script prepares the lab environment for an ONTAP Select deployment, and creates the ONTAP Select Deploy VM, but does not add the hosts to deploy or create any ONTAP Select clusters.  You can use the standard out of the box workflows for adding hosts and creating cluster.
 
 Suggested deployment plan:
 1. Log in to ONTAP Select deploy at https://deploy.demo.netapp.com using the following credentials:
 ```
-URL: [deploy](https://deploy.demo.netapp.com)
+URL: https://deploy.demo.netapp.com
 user: admin
 password: Netapp1!
 ```
