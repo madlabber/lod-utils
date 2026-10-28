@@ -284,6 +284,13 @@ $myVM = Import-VApp -Source $ovfPath -OvfConfiguration $ovfConfig -VMHost "esx2.
 # Start the Deploy VM
 Start-VM -VM $myVM -Confirm:$false
 
+# Wait for it to respond
+$ip = "192.168.0.99"
+while (-not (Test-NetConnection -ComputerName $ip -InformationLevel Quiet)) {
+    Write-Host "Still waiting for $ip..."
+    Start-Sleep -Seconds 3
+}
+Write-Host "Deploy is up!" -ForegroundColor Green
 
 # Add some documentation to the desktop
 $IPAddresses = @"
