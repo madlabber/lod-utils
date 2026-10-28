@@ -320,18 +320,6 @@ Suggested deployment plan:
 4. Deploy a single node OTS cluster to esx1.demo.netapp.com on storage pool "VMFS1"
 
 5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "VMFS3" and "VMFS4"
-Note that a 2 node HA deployment will need some networking remediation because this lab only has one network.
-This causes incorrect broadcast domain and port assignments during HA bringup that may need manual remediation.
-
-example commands (for a 2-node cluster named 'demo2'):
-  broadcast-domain remove-ports -broadcast-domain Cluster -ipspace Cluster -ports demo2-01:e0b,demo2-01:e0g
-  broadcast-domain add-ports -broadcast-domain Default -ports demo2-01:e0b,demo2-01:e0g
-  broadcast-domain add-ports -broadcast-domain Default -ports demo2-02:e0b,demo2-02:e0g
-  network interface modify -vserver demo2 -lif demo2-02_mgmt1 -home-port e0b
-  network interface revert *
-  broadcast-domain add-ports -broadcast-domain Default -ports demo2-02:e0a
-  network interface modify -vserver demo2 -lif demo2-02_mgmt1 -home-port e0a
-  network interface revert *
   
 
 "@
