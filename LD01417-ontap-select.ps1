@@ -227,8 +227,15 @@ $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name NFS4 -Pat
 # Confirgure vSwitch0
 Get-VirtualSwitch -Name "vSwitch0" | Set-VirtualSwitch -Mtu 9000 -Confirm:$false
 Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch0" | New-VirtualPortGroup -Name "OTS-Mgmt" 
-Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch0" | New-VirtualPortGroup -Name "OTS-Internal" 
 Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch0" | New-VirtualPortGroup -Name "OTS-Data" 
+
+# Configure vSwitch1
+$vswitch = New-VirtualSwitch -VMHost "esx1.demo.netapp.com" -Name "vSwitch1" -Nic "vmnic2"
+$vswitch = New-VirtualSwitch -VMHost "esx2.demo.netapp.com" -Name "vSwitch1" -Nic "vmnic2"
+$vswitch = New-VirtualSwitch -VMHost "esx3.demo.netapp.com" -Name "vSwitch1" -Nic "vmnic2"
+$vswitch = New-VirtualSwitch -VMHost "esx4.demo.netapp.com" -Name "vSwitch1" -Nic "vmnic2"
+Get-VirtualSwitch -Name "vSwitch1" | Set-VirtualSwitch -Mtu 9000 -Confirm:$false
+Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch1" | New-VirtualPortGroup -Name "OTS-Internal" 
 
 # Stop unused VMs
 Stop-VM -VM "OTV1" -Confirm:$false
