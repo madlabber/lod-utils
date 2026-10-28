@@ -24,16 +24,18 @@ user: admin
 password: Netapp1!
 ```
 
-2. Add the first hosts as follows:
+2. The "Getting Started with ONTAP Select Deploy" guided workflow will start.  Click next on the Add Licenses step as this lab will use built in evaluation licenses.
+   
+3. In the "Add Host to Inventory" page, add the first hosts as follows:
 ```
-using vcenter: enabled
-vcenter: vc1.demo.netapp.com
-vcenter username: administrator@demo.local
-vcenter password: Netapp1!
-host: esx1.demo.netapp.com
+Add from a vCenter: enabled
+vCenter Name: vc1.demo.netapp.com
+vCenter Username: administrator@demo.local
+vCenter Password: Netapp1!
+Host Name: esx1.demo.netapp.com
 ```
 
-3. Click add to add the following additional hosts
+3. Before proceeding, Add the following additional hosts
 ```
 esx2.demo.netapp.com
 esx3.demo.netapp.com
