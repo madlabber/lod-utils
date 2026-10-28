@@ -31,15 +31,16 @@ write-host "#"
 write-host "#"
 write-host "#"
 
-# Install Powershell modules:
-write-host "# Install Powershell modules:"
-write-host "# this will take several minutes..."
-write-host "- VCF.PowerCLI"
-Install-Module -Name VCF.PowerCLI -AllowClobber -Force
-write-host "- NetApp.ONTAP"
-Install-Module -Name NetApp.ONTAP
-write-host "- posh-ssh"
-Install-Module -Name posh-ssh
+## Install Powershell modules:
+## These are now pre-installed in the lab
+# write-host "# Install Powershell modules:"
+# write-host "# this will take several minutes..."
+# write-host "- VCF.PowerCLI"
+# Install-Module -Name VCF.PowerCLI -AllowClobber -Force
+# write-host "- NetApp.ONTAP"
+# Install-Module -Name NetApp.ONTAP
+# write-host "- posh-ssh"
+# Install-Module -Name posh-ssh
 
 # Import Modules
 write-host "Importing Modules"
