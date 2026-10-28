@@ -262,6 +262,29 @@ $ovfUrl      = "http://100.64.0.20/OTS/9.19.1/SelectDeploy_9191_ESX.ova"
 $ovfPath     = "C:\LOD\SelectDeploy_9191_ESX.ova"
 Start-BitsTransfer -Source $ovfUrl -Destination $ovfPath
 
+# Initialize the OVF Import Configuration
+$ovfConfig = Get-OvfConfiguration -Ovf $ovfPath
+
+# Set the OVF deployment properties
+$ovfConfig.NetworkMapping.ONTAP_Select_Deploy_VM_Network.value = "VM Network"
+$ovfConfig.Common.password.Value = "Netapp1!" 
+$ovfConfig.Common.product_company.Value = "NetApp" 
+$ovfConfig.Common.proxy_url.Value = "" 
+$ovfConfig.Common.ipAddress.Value = "192.168.0.99" 
+$ovfConfig.Common.netMask.Value = "255.255.255.0" 
+$ovfConfig.Common.gateway.Value = "192.168.0.1" 
+$ovfConfig.Common.hostName.Value = "deploy" 
+$ovfConfig.Common.primaryDNS.Value = "192.168.0.253" 
+$ovfConfig.Common.secondaryDNS.Value = "" 
+$ovfConfig.Common.searchDomains.Value = "demo.netapp.com"
+
+# Deploy the OVF
+$myVM = Import-VApp -Source $ovfPath -OvfConfiguration $ovfConfig -VMHost "esx1.demo.netapp.com" -Datastore "local1" -DiskStorageFormat "Thin" -Name "Deploy"
+
+# Start the Deploy VM
+Start-VM -VM $myVM -Confirm:$false
+
+
 # Add some documentation to the desktop
 $IPAddresses = @"
 #IP Address Map:
