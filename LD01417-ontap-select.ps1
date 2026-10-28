@@ -279,7 +279,7 @@ $ovfConfig.Common.secondaryDNS.Value = ""
 $ovfConfig.Common.searchDomains.Value = "demo.netapp.com"
 
 # Deploy the OVF
-$myVM = Import-VApp -Source $ovfPath -OvfConfiguration $ovfConfig -VMHost "esx1.demo.netapp.com" -Datastore "local1" -DiskStorageFormat "Thin" -Name "Deploy"
+$myVM = Import-VApp -Source $ovfPath -OvfConfiguration $ovfConfig -VMHost "esx2.demo.netapp.com" -Datastore "local2" -DiskStorageFormat "Thin" -Name "Deploy"
 
 # Start the Deploy VM
 Start-VM -VM $myVM -Confirm:$false
