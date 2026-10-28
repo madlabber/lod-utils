@@ -241,6 +241,12 @@ Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch1" |
 Stop-VM -VM "OTV1" -Confirm:$false
 Stop-VM -VM "linux2" -Confirm:$false
 
+# Merge hosts into cluster 1 on vCenter1
+$result = add-vmhost esx3.demo.netapp.com -Server vc1.demo.netapp.com -Location Cluster1 -user root -password NetApp123! -force 
+$result = add-vmhost esx4.demo.netapp.com -Server vc1.demo.netapp.com -Location Cluster1 -user root -password NetApp123! -force
+$result = remove-vmhost esx3.demo.netapp.com -Server vc2.demo.netapp.com -Confirm:$false
+$result = remove-vmhost esx4.demo.netapp.com -Server vc2.demo.netapp.com -Confirm:$false
+
 # Add DNS record for deploy at 192.168.0.99
 write-host "Adding deploy A record to DNS server"
 Add-DnsServerResourceRecordA -ComputerName dc1.demo.netapp.com -Name deploy -Ipv4Address 192.168.0.99 -ZoneName demo.netapp.com
@@ -307,19 +313,19 @@ Suggested deployment plan:
 
 2. On the ONTAP Deploy Administration tab, add both vcenter servers to the Management Servers list
     vc1.demo.netapp.com
-	vc2.demo.netapp.com
 
 3. On the ONTAP Deploy Hypervisor Hosts tab, add the available ESX hosts.
    management server: vc1.demo.netapp.com
    hosts: esx1.demo.netapp.com
 	      esx2.demo.netapp.com
-   management server: vc2.demo.netapp.com
-   hosts: esx3.demo.netapp.com
+          esx3.demo.netapp.com
 	      esx4.demo.netapp.com
 		  
 4. Deploy a single node OTS cluster to esx1.demo.netapp.com on storage pool "VMFS1"
 
 5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "VMFS3" and "VMFS4"
+
+6. Alternatively, deploy a 4-node cluster using all 4 hosts.
   
 
 "@
