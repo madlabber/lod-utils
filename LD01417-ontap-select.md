@@ -36,10 +36,9 @@ Gateway: 192.168.0.1
 DNS Server: 192.168.0.253
 ```
 
-2. On the ONTAP Deploy Administration tab, add both vcenter servers to the Management Servers list
+2. On the ONTAP Deploy Administration tab, add the vcenter server to the Management Servers list
 ```
 vc1.demo.netapp.com
-vc2.demo.netapp.com
 ```
 
 3. On the ONTAP Deploy Hypervisor Hosts tab, add the available ESX hosts.
@@ -47,12 +46,12 @@ vc2.demo.netapp.com
 management server: vc1.demo.netapp.com
 hosts: esx1.demo.netapp.com
        esx2.demo.netapp.com
-
-management server: vc2.demo.netapp.com
-hosts: esx3.demo.netapp.com
+       esx3.demo.netapp.com
        esx4.demo.netapp.com
 ```
 
 4. Deploy a single node OTS cluster to esx1.demo.netapp.com on storage pool "VMFS1"
 
 5. Deploy a 2 node OTS cluster to esx3 and esx4, using storage pools "VMFS3" and "VMFS4"
+
+6. Alternatively, deploy a 4-node cluster using all 4 hosts. 
