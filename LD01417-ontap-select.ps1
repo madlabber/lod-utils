@@ -10,7 +10,7 @@
 # What it does:
 # Converts LOD environment to an ONTAP Select on VMware lab environment.
 # Note while this prepares the environment for an OTS deployment, it does not
-# download the ONTAP Select deploy image.  You must download that within the lab from the MySupport site.
+# perform the actual deployment.  
 
 # To Do:
 # - clone the ansible project on linux1
@@ -255,6 +255,13 @@ $result = remove-vmhost esx4.demo.netapp.com -Server vc2.demo.netapp.com -Confir
 write-host "Adding deploy A record to DNS server"
 Add-DnsServerResourceRecordA -ComputerName dc1.demo.netapp.com -Name deploy -Ipv4Address 192.168.0.99 -ZoneName demo.netapp.com
 
+# Download the deploy OVA
+write-host "Downloading the Select Deploy OVA"
+# Download the Select Deploy OVA
+$ovfUrl      = "http://100.64.0.20/OTS/9.19.1/SelectDeploy_9191_ESX.ova"
+$ovfPath     = "C:\LOD\SelectDeploy_9191_ESX.ova"
+Start-BitsTransfer -Source $ovfUrl -Destination $ovfPath
+
 # Add some documentation to the desktop
 $IPAddresses = @"
 #IP Address Map:
@@ -301,10 +308,7 @@ $IPAddresses | Out-File -FilePath "C:\Users\Administrator.DEMO\Desktop\IPAddress
 # Drop the readme on the desktop
 $Readme = @"
 This conversion script prepares the lab environment for an ONTAP Select deployment, but does not perform the actual deployment.
-
-You must download the ONTAP Select Deploy tool from mysupport.netapp.com either from the product downloads area or the evaluation downloads area.
-Then you must install ONTAP Select Deploy, and add the available management servers and hosts to Deploys inventory. 
-Then you can use the 4 available hosts to build any combination of 1,2 or 4 node clusters.
+A copy of the OVA for ONTAP Select Deploy can be found in C:\LOD\
 
 Suggested deployment plan:
 1. Use the Deploy OVF feature on vc1.demo.netapp.com to install ONTAP Select Deploy on esx2 on datastore 'local2', with the following network parameters:
