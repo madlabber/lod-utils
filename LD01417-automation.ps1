@@ -5,75 +5,95 @@
 # 2. Start a new administrator powershell window
 # 
 # 3. Run this command:
-#    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/madlabber/lod-utils/refs/heads/main/LD01417-conversion.ps1'))
+#    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/madlabber/lod-utils/refs/heads/main/LD01417-automation.ps1'))
 
 # What it does:
 # Converts LOD environment to generic vsphere on netapp:
-# vc1 with 1 host, 6 CPU, 24gb ram
-# vc2 with 3 hosts, 28 CPU, 72GB RAM
+# vc1 with 4 host, 16 CPU, 24gb ram
 # 2 NFS datastores of ~ 600gb each
 # 1 ansible controller running Rocky 9.4
 # VSCode desktop environment on the jumphost with plugins for ansible, powershell, and remote-ssh
-# Note: in this revision of the lab there is insufficient licensing to consolidate all hosts into a single vsphere cluster.
 
 # Install VSCode and some plugins:
 write-host "# Install VSCode and some plugins:"
-Invoke-WebRequest -Uri "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" -Outfile C:\LOD\VSCodeSetup-x64.exe
+Start-BitsTransfer -Source "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" -Destination C:\LOD\VSCodeSetup-x64.exe
 start-process -FilePath "C:\LOD\VSCodeSetup-x64.exe" -ArgumentList "/VERYSILENT", "/MERGETASKS=!runcode" -Wait
 & 'C:\Program Files\Microsoft VS Code\bin\code' --install-extension ms-vscode-remote.remote-ssh
 & 'C:\Program Files\Microsoft VS Code\bin\code' --install-extension ms-vscode.powershell
 & 'C:\Program Files\Microsoft VS Code\bin\code' --install-extension redhat.ansible
 
 # Install Powershell modules:
-write-host "# Install Powershell modules:"
-Install-Module -Name VCF.PowerCLI -AllowClobber -Force
-Install-Module -Name NetApp.ONTAP
+# These are now built into the jumphost by default
+#write-host "# Install Powershell modules:"
+#Install-Module -Name VCF.PowerCLI -AllowClobber -Force
+#Install-Module -Name NetApp.ONTAP
+
+# Import Modules
+write-host "Importing Modules"
 Import-Module -Name VMware.PowerCLI 
 Import-Module -Name NetApp.ONTAP
+Import-Module -Name DnsServer
+Import-Module -Name posh-ssh
 
-# Configure clusters 
-write-host "# Configure clusters "
+# Connect to clusters 
+write-host "# Connecting to clusters "
 $username = 'admin'
 $password = ConvertTo-SecureString -String 'Netapp1!' -AsPlainText -Force
 $credential = New-Object System.Management.Automation.PSCredential $username,$password
 Connect-NcController "cluster1" -Credential $credential
-Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
+Connect-NcController "cluster2" -Credential $credential
+
+# Generate SSH keys
+write-host "# Generate SSH keys"
+mkdir C:\Users\Administrator.DEMO\.ssh
+ssh-keygen -q -t ed25519 -f C:\Users\Administrator.DEMO\.ssh\id_ed25519 -N '""'
+
+# Generate SSH keys for linux1
+write-host "# Generating SSH keys"
+Start-BitsTransfer -Source "https://github.com/maxshlain/ssh-copy-id-net/releases/download/v0.1.7/ssh-copy-id-net-0.1.7-win-x64.zip" -Destination C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip
+Expand-Archive -Path C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip -DestinationPath C:\LOD 
+
+# Add keys to linux 1
+write-host "# Add SSH keys to linux1"
+start-process -FilePath "C:\LOD\ssh-copy-id-net.exe" -ArgumentList "linux1", "22", "root", "Netapp1!", "C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub" -Wait
+ssh -o "StrictHostKeyChecking=accept-new" -i C:\Users\Administrator.Demo\.ssh\id_ed25519 root@linux1 cat /etc/rocky-release
+
+# Add SSH keys to cluster1 and cluster 2
+write-host "# Add SSH keys to cluster1 and cluster 2"
+$session1 = New-SSHSession -ComputerName "cluster1" -Credential $credential -AcceptKey
+$session2 = New-SSHSession -ComputerName "cluster2" -Credential $credential -AcceptKey
+$cmd = 'security login create -user-or-group-name admin -application ssh -authentication-method publickey -role admin'
+$result = Invoke-SSHCommand -SessionId $session1.SessionID -Command $cmd
+$result = Invoke-SSHCommand -SessionId $session2.SessionID -Command $cmd
+$cmd = "security login publickey create -username admin -application ssh -index 0 -publickey ""$(get-content C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub)"""
+$result = Invoke-SSHCommand -SessionId $session1.SessionID -Command $cmd
+$result = Invoke-SSHCommand -SessionId $session2.SessionID -Command $cmd
+sleep 30
+ssh -o "StrictHostKeyChecking=accept-new" admin@cluster1 version
+ssh -o "StrictHostKeyChecking=accept-new" admin@cluster2 version
+
+# Configure clusters 
+write-host "# Configure clusters "
+# Configure vstorage 
+ssh admin@cluster1 vserver nfs modify -vstorage enabled
+ssh admin@cluster2 vserver nfs modify -vstorage enabled
 $result = new-ncvol ISOs cluster1_01_SSD_1 100g /ISOs -vservercontext svm1 
 $result = new-ncvol code cluster1_01_SSD_1 100g /code -vservercontext svm1
 $result = new-ncvol vmnfs01 cluster1_01_SSD_1 600g /vmnfs01 -vservercontext svm1
-Connect-NcController "cluster2" -Credential $credential
-Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "vserver nfs modify -vstorage enabled"
 $result = new-ncvol vmnfs02 cluster2_01_SSD_1 600g /vmnfs02 -vservercontext svm2
 
 # Configure vSphere:
 write-host "# Configure vSphere:"
 Connect-VIServer -Server vc1.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
 Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
-$result = add-vmhost esx2.demo.netapp.com -Server vc2.demo.netapp.com -Location Cluster1 -user root -password NetApp123! -force 
-$result = remove-vmhost esx2.demo.netapp.com -Server vc1.demo.netapp.com -Confirm:$false
+$result = add-vmhost esx3.demo.netapp.com -Server vc1.demo.netapp.com -Location Cluster1 -user root -password NetApp123! -force 
+$result = remove-vmhost esx3.demo.netapp.com -Server vc2.demo.netapp.com -Confirm:$false
+$result = add-vmhost esx4.demo.netapp.com -Server vc1.demo.netapp.com -Location Cluster1 -user root -password NetApp123! -force 
+$result = remove-vmhost esx4.demo.netapp.com -Server vc2.demo.netapp.com -Confirm:$false
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name ISOs -Path /ISOs -NfsHost 192.168.0.132
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs01 -Path /vmnfs01 -NfsHost 192.168.0.132
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs02 -Path /vmnfs02 -NfsHost 192.168.0.142
 
-
-# Setup SSH keys for linux1
-write-host "# Setup SSH keys for linux1"
-mkdir C:\Users\Administrator.DEMO\.ssh
-ssh-keygen -q -t ed25519 -f C:\Users\Administrator.DEMO\.ssh\id_ed25519 -N '""'
-Invoke-WebRequest -Uri "https://github.com/maxshlain/ssh-copy-id-net/releases/download/v0.1.7/ssh-copy-id-net-0.1.7-win-x64.zip" -Outfile C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip
-Expand-Archive -Path C:\LOD\ssh-copy-id-net-0.1.7-win-x64.zip -DestinationPath C:\LOD 
-start-process -FilePath "C:\LOD\ssh-copy-id-net.exe" -ArgumentList "linux1", "22", "root", "Netapp1!", "C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub" -Wait
-ssh -o "StrictHostKeyChecking=accept-new" -i C:\Users\Administrator.Demo\.ssh\id_ed25519 root@linux1 cat /etc/rocky-release
-
-# Add SSH keys to cluster1 and cluster 2
-write-host "# Add SSH keys to cluster1 and cluster 2"
-Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "security login create -user-or-group-name admin -application ssh -authentication-method publickey -role admin"
-Invoke-NcSsh -Controller "cluster1" -Credential $credential -Command "security login publickey create -username admin -application ssh -index 0 -publickey ""$(get-content C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub)"""
-Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "security login create -user-or-group-name admin -application ssh -authentication-method publickey -role admin"
-Invoke-NcSsh -Controller "cluster2" -Credential $credential -Command "security login publickey create -username admin -application ssh -index 0 -publickey ""$(get-content C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub)"""
-sleep 30
-ssh -o "StrictHostKeyChecking=accept-new" admin@cluster1 version
-ssh -o "StrictHostKeyChecking=accept-new" admin@cluster2 version
 
 # Configure Linux1 
 write-host "# Configure Linux1 "
@@ -108,14 +128,13 @@ ssh admin@cluster2 sleep 30
 ssh admin@cluster2 aggr add-disks -aggregate cluster2_01_SSD_1 -diskcount 14
 ssh admin@cluster2 aggr relocation start -node cluster2-02 -destination cluster2-01 -aggregate-list cluster2_01_SSD_1
 
-# Done with Powershell:
-#exit
+
 
 # TBD: 
 # - install vaai 
 # - Git clone
-# - make this an invokable script
-
+# Add some documentation to the desktop
+$IPAddresses = @"
 #IP Address Map:
 # 192.168.0.1	    Gateway
 # 192.168.0.5	    Jumphost
@@ -129,6 +148,7 @@ ssh admin@cluster2 aggr relocation start -node cluster2-02 -destination cluster2
 # 192.168.0.61	Linux1 (nested)
 # 192.168.0.62	OTV1
 # 192.168.0.64	Linux2 (nested)
+# 192.168.0.99  Deploy
 # 192.168.0.101	[cluster1] cluster_mgmt
 # 192.168.0.102	[cluster2] cluster_mgmt
 # 192.168.0.111	cluster1_01_mgmt1
@@ -151,4 +171,7 @@ ssh admin@cluster2 aggr relocation start -node cluster2-02 -destination cluster2
 # 192.168.0.144	[svm2] iscsi_2
 # 192.168.0.145	[svm2] nvme_1
 # 192.168.0.146	[svm2] nvme_2
-	
+
+"@
+
+$IPAddresses | Out-File -FilePath "C:\Users\Administrator.DEMO\Desktop\IPAddresses.txt"
