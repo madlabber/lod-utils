@@ -93,10 +93,25 @@ $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name ISOs -Pat
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs01 -Path /vmnfs01 -NfsHost 192.168.0.132
 $result = Get-Cluster Cluster1 | Get-VMHost | New-Datastore -Nfs -Name vmnfs02 -Path /vmnfs02 -NfsHost 192.168.0.142
 # Cleanup on vc2
-Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
-$result = remove-vmhost esx3.demo.netapp.com -Server vc2.demo.netapp.com -Confirm:$false
-$result = remove-vmhost esx4.demo.netapp.com -Server vc2.demo.netapp.com -Confirm:$false
-disconnect-VIServer -Server vc2.demo.netapp.com -Confirm:$false
+#Connect-VIServer -Server vc2.demo.netapp.com -user Administrator@demo.local -password Netapp1! -force
+#$result = remove-vmhost esx3.demo.netapp.com -Server vc2.demo.netapp.com -Confirm:$false
+#$result = remove-vmhost esx4.demo.netapp.com -Server vc2.demo.netapp.com -Confirm:$false
+#disconnect-VIServer -Server vc2.demo.netapp.com -Confirm:$false
+
+# Confirgure vSwitch0
+Get-VirtualSwitch -Name "vSwitch0" | Set-VirtualSwitch -Mtu 9000 -Confirm:$false
+
+# Configure vSwitch1
+$vswitch = New-VirtualSwitch -VMHost "esx1.demo.netapp.com" -Name "vSwitch1" -Nic "vmnic2"
+$vswitch = New-VirtualSwitch -VMHost "esx2.demo.netapp.com" -Name "vSwitch1" -Nic "vmnic2"
+$vswitch = New-VirtualSwitch -VMHost "esx3.demo.netapp.com" -Name "vSwitch1" -Nic "vmnic2"
+$vswitch = New-VirtualSwitch -VMHost "esx4.demo.netapp.com" -Name "vSwitch1" -Nic "vmnic2"
+$result = Get-VirtualSwitch -Name "vSwitch1" -VMHost (Get-VMHost "esx1.demo.netapp.com") | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic (Get-VMHostNetworkAdapter -Physical -Name "vmnic3" -VMHost "esx1.demo.netapp.com") -Confirm:$false
+$result = Get-VirtualSwitch -Name "vSwitch1" -VMHost (Get-VMHost "esx2.demo.netapp.com") | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic (Get-VMHostNetworkAdapter -Physical -Name "vmnic3" -VMHost "esx2.demo.netapp.com") -Confirm:$false
+$result = Get-VirtualSwitch -Name "vSwitch1" -VMHost (Get-VMHost "esx3.demo.netapp.com") | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic (Get-VMHostNetworkAdapter -Physical -Name "vmnic3" -VMHost "esx3.demo.netapp.com") -Confirm:$false
+$result = Get-VirtualSwitch -Name "vSwitch1" -VMHost (Get-VMHost "esx4.demo.netapp.com") | Add-VirtualSwitchPhysicalNetworkAdapter -VMHostPhysicalNic (Get-VMHostNetworkAdapter -Physical -Name "vmnic3" -VMHost "esx4.demo.netapp.com") -Confirm:$false
+Get-VirtualSwitch -Name "vSwitch1" | Set-VirtualSwitch -Mtu 9000 -Confirm:$false
+Get-Cluster -Name "Cluster1" | Get-VMHost | Get-VirtualSwitch -Name "vSwitch1" | New-VirtualPortGroup -Name "Internal" 
 
 
 # Configure Linux1 
