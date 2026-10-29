@@ -10,7 +10,7 @@ This script converts an existing LOD environment into an automation sandbox cont
 
    Right click the Start button and select "Windows PowerShell (Admin)"
 
-3. Copy this command and past it into the powershell window in your lab using the Edit->Paste option in your browser.
+3. Copy this command and paste it into the powershell window in your lab using the Edit->Paste option in your browser.
    ```
    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/madlabber/lod-utils/refs/heads/main/LD01417-automation.ps1'))
    ```
