@@ -13,7 +13,7 @@ This is a collection of customizations and code snippets for use in NetApp Lab O
 
 3. [Code Snippets](https://github.com/madlabber/lod-utils/blob/main/snippets.md)
     
-    Code snippets for for use in various labs.
+    Code snippets for use in various labs.
 
     
    
