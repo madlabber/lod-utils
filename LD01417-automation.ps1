@@ -58,6 +58,11 @@ write-host "# Add SSH keys to linux1"
 start-process -FilePath "C:\LOD\ssh-copy-id-net.exe" -ArgumentList "linux1", "22", "root", "Netapp1!", "C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub" -Wait
 ssh -o "StrictHostKeyChecking=accept-new" -i C:\Users\Administrator.Demo\.ssh\id_ed25519 root@linux1 cat /etc/rocky-release
 
+# Add keys to linux 2
+write-host "# Add SSH keys to linux1"
+start-process -FilePath "C:\LOD\ssh-copy-id-net.exe" -ArgumentList "linux2", "22", "root", "Netapp1!", "C:\Users\Administrator.DEMO\.ssh\id_ed25519.pub" -Wait
+ssh -o "StrictHostKeyChecking=accept-new" -i C:\Users\Administrator.Demo\.ssh\id_ed25519 root@linux2 cat /etc/rocky-release
+
 # Add SSH keys to cluster1 and cluster 2
 write-host "# Add SSH keys to cluster1 and cluster 2"
 $session1 = New-SSHSession -ComputerName "cluster1" -Credential $credential -AcceptKey
